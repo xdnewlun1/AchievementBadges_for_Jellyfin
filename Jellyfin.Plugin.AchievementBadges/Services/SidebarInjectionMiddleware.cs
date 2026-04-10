@@ -14,18 +14,67 @@ public class SidebarInjectionMiddleware
 
     private const string InjectionScript = @"<script>
 (function(){
-    var ID='ab-sidebar-entry';
-    function inject(){
-        if(document.getElementById(ID))return;
+    var SIDEBAR_ID='ab-sidebar-entry';
+    var SHOWCASE_ID='ab-sidebar-showcase';
+    var iconMap={play_circle:'\u25b6',travel_explore:'\ud83e\udded',weekend:'\ud83d\udecb',chair:'\ud83e\ude91',home:'\ud83c\udfe0',movie_filter:'\ud83c\udf9e',live_tv:'\ud83d\udcfa',theaters:'\ud83c\udfad',local_fire_department:'\ud83d\udd25',bolt:'\u26a1',military_tech:'\ud83c\udfc6',auto_awesome:'\u2728',movie:'\ud83c\udfac',tv:'\ud83d\udcfa',dark_mode:'\ud83c\udf19',nights_stay:'\ud83c\udf03',bedtime:'\ud83d\ude34',wb_sunny:'\ud83c\udf05',light_mode:'\u2600',sunny:'\ud83c\udf1e',event:'\ud83d\udcc5',event_available:'\ud83d\uddd3',celebration:'\ud83c\udf89',stars:'\ud83c\udf1f',collections_bookmark:'\ud83d\udcda',inventory_2:'\ud83d\uddc3',today:'\ud83d\udcc6',calendar_month:'\ud83d\uddd3',favorite:'\u2764',timeline:'\ud83d\udcc8',insights:'\ud83d\udcca',all_inclusive:'\u267e',speed:'\ud83d\udca8',hourglass_bottom:'\u23f3',directions_run:'\ud83c\udfc3',sports_score:'\ud83c\udfc1',local_movies:'\ud83c\udf7f',emoji_events:'\ud83c\udfc6'};
+    function ic(n){return iconMap[(n||'').toLowerCase()]||'\ud83c\udfc5';}
+    var rarityColors={common:'#9fb3c8',uncommon:'#34d399',rare:'#60a5fa',epic:'#a78bfa',legendary:'#fbbf24',mythic:'#f43f5e'};
+    function rc(r){return rarityColors[(r||'').toLowerCase()]||'#9fb3c8';}
+
+    function injectSidebar(){
+        if(document.getElementById(SIDEBAR_ID))return;
         var nav=document.querySelector('.mainDrawer-scrollContainer .navMenuOptions')||document.querySelector('.mainDrawer-scrollContainer');
         if(!nav)return;
+        var wrap=document.createElement('div');
+        wrap.id=SIDEBAR_ID;
         var a=document.createElement('a');
-        a.id=ID;a.className='navMenuOption';a.style.cursor='pointer';
+        a.className='navMenuOption';a.style.cursor='pointer';
         a.innerHTML='<span class=""material-icons navMenuOptionIcon"">emoji_events</span><span class=""navMenuOptionText"">Achievements</span>';
         a.addEventListener('click',function(e){e.preventDefault();window.location.hash='/achievements';});
-        nav.appendChild(a);
+        wrap.appendChild(a);
+        var showcase=document.createElement('div');
+        showcase.id=SHOWCASE_ID;
+        showcase.style.cssText='display:flex;gap:4px;padding:2px 12px 8px 42px;flex-wrap:wrap;';
+        wrap.appendChild(showcase);
+        nav.appendChild(wrap);
+        loadShowcase();
     }
-    function start(){inject();new MutationObserver(inject).observe(document.body,{childList:true,subtree:true});}
+
+    function loadShowcase(){
+        var sc=document.getElementById(SHOWCASE_ID);
+        if(!sc)return;
+        var api=window.ApiClient||window.apiClient;
+        if(!api)return;
+        var userId='';
+        try{
+            if(typeof api.getCurrentUserId==='function')userId=api.getCurrentUserId();
+            if(!userId&&api._serverInfo)userId=api._serverInfo.UserId;
+        }catch(e){}
+        if(!userId)return;
+        var url=(typeof api.getUrl==='function')?api.getUrl('Plugins/AchievementBadges/users/'+userId+'/equipped'):'/Plugins/AchievementBadges/users/'+userId+'/equipped';
+        var headers={'Content-Type':'application/json'};
+        try{
+            if(typeof api.accessToken==='function'){var t=api.accessToken();if(t)headers['X-Emby-Token']=t;}
+            else if(api._serverInfo&&api._serverInfo.AccessToken)headers['X-Emby-Token']=api._serverInfo.AccessToken;
+        }catch(e){}
+        fetch(url,{headers:headers,credentials:'include'}).then(function(r){return r.ok?r.json():[];}).then(function(badges){
+            sc.innerHTML='';
+            if(!badges||!badges.length)return;
+            badges.forEach(function(b){
+                var pill=document.createElement('div');
+                pill.title=b.Title+' ('+b.Rarity+')';
+                pill.style.cssText='display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid '+rc(b.Rarity)+';font-size:11px;cursor:default;';
+                pill.innerHTML='<span style=""font-size:12px;"">'+ic(b.Icon)+'</span><span style=""color:'+rc(b.Rarity)+';font-weight:600;"">'+b.Title+'</span>';
+                sc.appendChild(pill);
+            });
+        }).catch(function(){});
+    }
+
+    function start(){
+        injectSidebar();
+        new MutationObserver(function(){injectSidebar();}).observe(document.body,{childList:true,subtree:true});
+        setInterval(loadShowcase,30000);
+    }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
