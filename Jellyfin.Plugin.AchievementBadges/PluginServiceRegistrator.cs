@@ -14,6 +14,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<PlaybackActivityTracker>();
         serviceCollection.AddSingleton<PlaybackCompletionService>();
         serviceCollection.AddSingleton<PlaybackCompletionTracker>();
+        serviceCollection.AddSingleton<WatchHistoryBackfillService>();
 
         serviceCollection.AddHostedService<SafeStartupRunner>();
 

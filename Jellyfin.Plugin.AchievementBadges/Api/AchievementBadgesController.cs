@@ -15,13 +15,16 @@ public class AchievementBadgesController : ControllerBase
 {
     private readonly AchievementBadgeService _badgeService;
     private readonly PlaybackCompletionService _playbackCompletionService;
+    private readonly WatchHistoryBackfillService _backfillService;
 
     public AchievementBadgesController(
         AchievementBadgeService badgeService,
-        PlaybackCompletionService playbackCompletionService)
+        PlaybackCompletionService playbackCompletionService,
+        WatchHistoryBackfillService backfillService)
     {
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
+        _backfillService = backfillService;
     }
 
     [HttpGet("test")]
@@ -297,5 +300,21 @@ public class AchievementBadgesController : ControllerBase
     {
         var stats = _badgeService.GetServerStats();
         return Ok(stats);
+    }
+
+    [HttpPost("users/{userId}/backfill")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult BackfillUser([FromRoute] string userId)
+    {
+        var result = _backfillService.BackfillUser(userId);
+        return Ok(result);
+    }
+
+    [HttpPost("backfill-all")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult BackfillAll()
+    {
+        var result = _backfillService.BackfillAllUsers();
+        return Ok(result);
     }
 }

@@ -374,6 +374,14 @@ padding:1em;
                         <button is="emby-button" type="button" class="raised" id="abResetBtn">
                             Reset badges
                         </button>
+
+                        <button is="emby-button" type="button" class="raised button-submit" id="abBackfillBtn">
+                            Scan watch history
+                        </button>
+
+                        <button is="emby-button" type="button" class="raised" id="abBackfillAllBtn">
+                            Scan all users
+                        </button>
                     </div>
                 </details>
 
@@ -448,6 +456,8 @@ padding:1em;
     var refreshBtn = document.getElementById('abRefreshBtn');
     var simulateBtn = document.getElementById('abSimulateBtn');
     var resetBtn = document.getElementById('abResetBtn');
+    var backfillBtn = document.getElementById('abBackfillBtn');
+    var backfillAllBtn = document.getElementById('abBackfillAllBtn');
 
     var tabBadgesBtn = document.getElementById('abTabBadgesBtn');
     var tabLeaderboardBtn = document.getElementById('abTabLeaderboardBtn');
@@ -942,6 +952,34 @@ padding:1em;
     refreshBtn.addEventListener('click', loadBadges);
     simulateBtn.addEventListener('click', simulatePlayback);
     resetBtn.addEventListener('click', resetBadges);
+
+    backfillBtn.addEventListener('click', function () {
+        var userId = getUserId();
+        if (!userId) { setError('No user ID.'); return; }
+        clearError();
+        setStatus('Scanning watch history... this may take a while...');
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/backfill', 'POST').then(function (result) {
+            return reloadAll().then(function () {
+                setStatus('Watch history scan complete! ' + (result.MoviesWatched || 0) + ' movies, ' + (result.EpisodesWatched || 0) + ' episodes, ' + (result.SeriesCompleted || 0) + ' series found.');
+            });
+        }).catch(function (err) {
+            setStatus('');
+            setError('Backfill failed. ' + (err && err.message ? err.message : String(err)));
+        });
+    });
+
+    backfillAllBtn.addEventListener('click', function () {
+        clearError();
+        setStatus('Scanning watch history for ALL users... this may take a while...');
+        fetchJson('Plugins/AchievementBadges/backfill-all', 'POST').then(function (result) {
+            return reloadAll().then(function () {
+                setStatus('Watch history scan complete for all users!');
+            });
+        }).catch(function (err) {
+            setStatus('');
+            setError('Backfill failed. ' + (err && err.message ? err.message : String(err)));
+        });
+    });
 
     initialisePage();
 })();

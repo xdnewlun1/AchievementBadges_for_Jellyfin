@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.4.6",
+        "changelog": "Added watch history backfill - scans existing Jellyfin watch history to retroactively award badges. Added header badge icons next to profile picture. Admin page has new Scan Watch History and Scan All Users buttons.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.6/Jellyfin.Plugin.AchievementBadgesv1.4.6.zip",
+        "checksum": "91B762112DBBCC8E85EC7579C1DE005C"
+      },
+      {
         "version": "1.4.5",
         "changelog": "Added equipped badge showcase in sidebar under Achievements entry. Badges appear as small colored pills with icons showing rarity border colors. New StarTrack-inspired banner with corner brackets, serif text glitch effect, and red accents.",
         "targetAbi": "10.11.0.0",
