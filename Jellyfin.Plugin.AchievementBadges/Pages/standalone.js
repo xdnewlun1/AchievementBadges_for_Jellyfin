@@ -1,5 +1,5 @@
 (function () {
-    var ROUTE = "#!/achievements";
+    var ROUTE_MATCH = "/achievements";
     var ROOT_ID = "achievementBadgesStandaloneRoot";
 
     var iconMap = {
@@ -332,8 +332,13 @@
         if (r) r.style.display = 'none';
     }
 
+    function isAchievementsRoute() {
+        var hash = window.location.hash || '';
+        return hash.indexOf(ROUTE_MATCH) !== -1;
+    }
+
     function onRouteChange() {
-        if (window.location.hash && window.location.hash.indexOf(ROUTE.replace('#', '')) !== -1) {
+        if (isAchievementsRoute()) {
             mountRoute();
         } else {
             unmountRoute();

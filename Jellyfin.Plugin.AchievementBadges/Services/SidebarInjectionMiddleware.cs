@@ -15,14 +15,14 @@ public class SidebarInjectionMiddleware
     private const string InjectionScript = @"<script>
 (function(){
     var ID='ab-sidebar-entry';
-    var URL='/web/index.html#!/achievements';
     function inject(){
         if(document.getElementById(ID))return;
         var nav=document.querySelector('.mainDrawer-scrollContainer .navMenuOptions')||document.querySelector('.mainDrawer-scrollContainer');
         if(!nav)return;
         var a=document.createElement('a');
-        a.id=ID;a.href=URL;a.className='navMenuOption';
+        a.id=ID;a.className='navMenuOption';a.style.cursor='pointer';
         a.innerHTML='<span class=""material-icons navMenuOptionIcon"">emoji_events</span><span class=""navMenuOptionText"">Achievements</span>';
+        a.addEventListener('click',function(e){e.preventDefault();window.location.hash='/achievements';});
         nav.appendChild(a);
     }
     function start(){inject();new MutationObserver(inject).observe(document.body,{childList:true,subtree:true});}
@@ -71,7 +71,7 @@ public class SidebarInjectionMiddleware
                     context.Response.Body = originalBody;
                     await context.Response.Body.WriteAsync(bytes);
 
-                    _logger.LogDebug("[AchievementBadges] Injected sidebar and standalone scripts.");
+                    _logger.LogInformation("[AchievementBadges] Injected sidebar and standalone scripts.");
                     return;
                 }
             }

@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.4.4",
+        "changelog": "Fixed standalone achievements page route detection. The page now correctly intercepts both #/achievements and #!/achievements hash formats. Sidebar uses click handler instead of href to set hash directly. Improved banner.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.4/Jellyfin.Plugin.AchievementBadgesv1.4.4.zip",
+        "checksum": "B83025E26BA55F0EC46B9F46D62D4218"
+      },
+      {
         "version": "1.4.3",
         "changelog": "Separated admin and user pages. Sidebar now links to a standalone user-facing achievements page at #!/achievements that all users can access. Admin page with simulate/reset stays at Plugin Settings. Rewrote standalone.js with proper auth. Red and black banner.",
         "targetAbi": "10.11.0.0",
