@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.4.1",
+        "changelog": "Major rewrite. Removed admin-only restriction so all users can access achievements. Rewrote all API calls to use native fetch with proper auth token headers instead of broken apiClient.fetch(). Fixed simulate playback showing 'undefined' error. Fixed sidebar injection to use correct Jellyfin nav classes. Removed dependency on standalone.js hash routing.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.1/Jellyfin.Plugin.AchievementBadgesv1.4.1.zip",
+        "checksum": "7B979861BF25C0DF37A4B03A6A70046E"
+      },
+      {
         "version": "1.4.0",
         "changelog": "Major bug fix release. Removed duplicate achievement definitions causing ambiguity. Fixed false playback recording on every session start inflating counters. Fixed GUID format inconsistency creating duplicate user profiles. Fixed leaderboard showing raw IDs instead of usernames. Fixed duplicate sidebar entries. Fixed unauthenticated API calls in profile inject. Replaced Console.WriteLine with proper ILogger. Removed unused Newtonsoft.Json dependency.",
         "targetAbi": "10.11.0.0",

@@ -1,6 +1,6 @@
 <div id="AchievementBadgesPage"
      data-role="page"
-     class="page type-interior pluginConfigurationPage"
+     class="page type-interior"
      data-require="emby-button,emby-input">
 
 <style>
@@ -301,6 +301,15 @@ border-bottom:none;
 opacity:0.8;
 }
 
+.abBtn{
+padding:0.45em 0.7em;
+border-radius:8px;
+border:1px solid rgba(255,255,255,0.14);
+background:rgba(255,255,255,0.05);
+color:#fff;
+cursor:pointer;
+}
+
 @media (max-width: 900px){
 #AchievementBadgesPage{
 padding:1em;
@@ -433,144 +442,127 @@ padding:1em;
 
 <script>
 (function () {
-    const userIdInput = document.getElementById('abUserId');
-    const meBtn = document.getElementById('abMeBtn');
-    const loadBtn = document.getElementById('abLoadBtn');
-    const refreshBtn = document.getElementById('abRefreshBtn');
-    const simulateBtn = document.getElementById('abSimulateBtn');
-    const resetBtn = document.getElementById('abResetBtn');
+    var userIdInput = document.getElementById('abUserId');
+    var meBtn = document.getElementById('abMeBtn');
+    var loadBtn = document.getElementById('abLoadBtn');
+    var refreshBtn = document.getElementById('abRefreshBtn');
+    var simulateBtn = document.getElementById('abSimulateBtn');
+    var resetBtn = document.getElementById('abResetBtn');
 
-    const tabBadgesBtn = document.getElementById('abTabBadgesBtn');
-    const tabLeaderboardBtn = document.getElementById('abTabLeaderboardBtn');
-    const tabStatsBtn = document.getElementById('abTabStatsBtn');
+    var tabBadgesBtn = document.getElementById('abTabBadgesBtn');
+    var tabLeaderboardBtn = document.getElementById('abTabLeaderboardBtn');
+    var tabStatsBtn = document.getElementById('abTabStatsBtn');
 
-    const panelBadges = document.getElementById('abPanelBadges');
-    const panelLeaderboard = document.getElementById('abPanelLeaderboard');
-    const panelStats = document.getElementById('abPanelStats');
+    var panelBadges = document.getElementById('abPanelBadges');
+    var panelLeaderboard = document.getElementById('abPanelLeaderboard');
+    var panelStats = document.getElementById('abPanelStats');
 
-    const statusText = document.getElementById('abStatus');
-    const errorBox = document.getElementById('abError');
-    const emptyState = document.getElementById('abEmpty');
-    const grid = document.getElementById('abGrid');
-    const equippedRow = document.getElementById('abEquippedRow');
-    const equippedEmpty = document.getElementById('abEquippedEmpty');
-    const leaderboardBox = document.getElementById('abLeaderboard');
-    const serverStatsBox = document.getElementById('abServerStats');
-    const showcaseRow = document.getElementById('abShowcaseRow');
-    const profileTitle = document.getElementById('abProfileTitle');
-    const profileSubtitle = document.getElementById('abProfileSubtitle');
-    const unlockedValue = document.getElementById('abUnlocked');
-    const totalValue = document.getElementById('abTotal');
-    const percentageValue = document.getElementById('abPercentage');
-    const equippedCountValue = document.getElementById('abEquippedCount');
+    var statusText = document.getElementById('abStatus');
+    var errorBox = document.getElementById('abError');
+    var emptyState = document.getElementById('abEmpty');
+    var grid = document.getElementById('abGrid');
+    var equippedRow = document.getElementById('abEquippedRow');
+    var equippedEmpty = document.getElementById('abEquippedEmpty');
+    var leaderboardBox = document.getElementById('abLeaderboard');
+    var serverStatsBox = document.getElementById('abServerStats');
+    var showcaseRow = document.getElementById('abShowcaseRow');
+    var profileTitle = document.getElementById('abProfileTitle');
+    var profileSubtitle = document.getElementById('abProfileSubtitle');
+    var unlockedValue = document.getElementById('abUnlocked');
+    var totalValue = document.getElementById('abTotal');
+    var percentageValue = document.getElementById('abPercentage');
+    var equippedCountValue = document.getElementById('abEquippedCount');
 
     function getApiClient() {
         return window.ApiClient || window.apiClient || null;
     }
 
-    function normaliseApiPath(path) {
-        return String(path || '').replace(/^\/+/, '');
+    function buildUrl(path) {
+        var cleanPath = String(path || '').replace(/^\/+/, '');
+        var apiClient = getApiClient();
+        if (apiClient && typeof apiClient.getUrl === 'function') {
+            return apiClient.getUrl(cleanPath);
+        }
+        return '/' + cleanPath;
     }
 
-    async function fetchJson(path, options) {
-        const apiClient = getApiClient();
-        const cleanPath = normaliseApiPath(path);
-
-        if (apiClient && typeof apiClient.getJSON === 'function' && !options) {
-            return await apiClient.getJSON(apiClient.getUrl(cleanPath));
+    function getAuthHeaders() {
+        var apiClient = getApiClient();
+        var headers = {};
+        if (apiClient) {
+            if (typeof apiClient.getDefaultHeaders === 'function') {
+                var defaults = apiClient.getDefaultHeaders();
+                if (defaults) {
+                    for (var key in defaults) {
+                        if (defaults.hasOwnProperty(key)) {
+                            headers[key] = defaults[key];
+                        }
+                    }
+                }
+            }
+            var token = apiClient._serverInfo && apiClient._serverInfo.AccessToken;
+            if (token) {
+                headers['X-Emby-Token'] = token;
+            }
         }
+        return headers;
+    }
 
-        if (apiClient && typeof apiClient.fetch === 'function') {
-            const response = await apiClient.fetch(
-                Object.assign({}, options || {}, {
-                    url: apiClient.getUrl(cleanPath)
-                })
-            );
+    function fetchJson(path, method) {
+        var url = buildUrl(path);
+        var httpMethod = method || 'GET';
+        var headers = getAuthHeaders();
+        headers['Content-Type'] = 'application/json';
 
+        return fetch(url, {
+            method: httpMethod,
+            headers: headers,
+            credentials: 'include'
+        }).then(function (response) {
             if (!response.ok) {
-                let message = 'Request failed: ' + response.status;
-                try {
-                    const body = await response.json();
-                    if (body && body.Message) {
-                        message = body.Message;
-                    }
-                } catch (_) {
-                }
-                throw new Error(message);
+                return response.text().then(function (text) {
+                    var msg = 'Request failed: ' + response.status;
+                    try {
+                        var body = JSON.parse(text);
+                        if (body && body.Message) msg = body.Message;
+                    } catch (e) {}
+                    throw new Error(msg);
+                });
             }
-
-            if (response.status === 204) {
-                return null;
-            }
-
-            const text = await response.text();
-            return text ? JSON.parse(text) : null;
-        }
-
-        const response = await fetch('/' + cleanPath, Object.assign({ credentials: 'include' }, options || {}));
-
-        if (!response.ok) {
-            let message = 'Request failed: ' + response.status;
-
-            try {
-                const body = await response.json();
-                if (body && body.Message) {
-                    message = body.Message;
-                }
-            } catch (_) {
-            }
-
-            throw new Error(message);
-        }
-
-        if (response.status === 204) {
-            return null;
-        }
-
-        return await response.json();
+            if (response.status === 204) return null;
+            return response.text().then(function (text) {
+                return text ? JSON.parse(text) : null;
+            });
+        });
     }
 
-    async function detectCurrentUserId() {
-        try {
-            const apiClient = getApiClient();
-
-            if (apiClient) {
-                if (typeof apiClient.getCurrentUserId === 'function') {
-                    const id = apiClient.getCurrentUserId();
-                    if (id) {
-                        return id;
-                    }
-                }
-
-                if (apiClient._serverInfo && apiClient._serverInfo.UserId) {
-                    return apiClient._serverInfo.UserId;
-                }
+    function detectCurrentUserId() {
+        var apiClient = getApiClient();
+        if (apiClient) {
+            if (typeof apiClient.getCurrentUserId === 'function') {
+                var id = apiClient.getCurrentUserId();
+                if (id) return Promise.resolve(id);
             }
-
-            const me = await fetchJson('Users/Me');
-            return me && me.Id ? me.Id : '';
-        } catch (_) {
-            return '';
+            if (apiClient._serverInfo && apiClient._serverInfo.UserId) {
+                return Promise.resolve(apiClient._serverInfo.UserId);
+            }
         }
+        return fetchJson('Users/Me').then(function (me) {
+            return me && me.Id ? me.Id : '';
+        }).catch(function () {
+            return '';
+        });
     }
 
     function getUserIdFromUrl() {
-        const fromSearch = new URLSearchParams(window.location.search).get('userId');
-        if (fromSearch) {
-            return fromSearch.trim();
-        }
-
-        const hash = window.location.hash || '';
-        const queryIndex = hash.indexOf('?');
-
+        var hash = window.location.hash || '';
+        var queryIndex = hash.indexOf('?');
         if (queryIndex !== -1) {
-            const hashQuery = hash.substring(queryIndex + 1);
-            const fromHash = new URLSearchParams(hashQuery).get('userId');
-            if (fromHash) {
-                return fromHash.trim();
-            }
+            var hashQuery = hash.substring(queryIndex + 1);
+            var params = new URLSearchParams(hashQuery);
+            var fromHash = params.get('userId');
+            if (fromHash) return fromHash.trim();
         }
-
         return '';
     }
 
@@ -595,12 +587,8 @@ padding:1em;
     function setSummary(summary) {
         unlockedValue.textContent = summary && summary.Unlocked != null ? summary.Unlocked : 0;
         totalValue.textContent = summary && summary.Total != null ? summary.Total : 0;
-
-        const percentage = summary && typeof summary.Percentage === 'number'
-            ? summary.Percentage.toFixed(1)
-            : '0.0';
-
-        percentageValue.textContent = percentage + '%';
+        var pct = summary && typeof summary.Percentage === 'number' ? summary.Percentage.toFixed(1) : '0.0';
+        percentageValue.textContent = pct + '%';
         equippedCountValue.textContent = summary && summary.EquippedCount != null ? summary.EquippedCount : 0;
     }
 
@@ -608,148 +596,109 @@ padding:1em;
         panelBadges.style.display = name === 'badges' ? 'block' : 'none';
         panelLeaderboard.style.display = name === 'leaderboard' ? 'block' : 'none';
         panelStats.style.display = name === 'stats' ? 'block' : 'none';
-
         tabBadgesBtn.classList.toggle('active', name === 'badges');
         tabLeaderboardBtn.classList.toggle('active', name === 'leaderboard');
         tabStatsBtn.classList.toggle('active', name === 'stats');
     }
 
     function rarityClass(rarity) {
-        const value = (rarity || '').toLowerCase();
-        if (value === 'uncommon') return 'rarity-uncommon';
-        if (value === 'rare') return 'rarity-rare';
-        if (value === 'epic') return 'rarity-epic';
-        if (value === 'legendary') return 'rarity-legendary';
-        if (value === 'mythic') return 'rarity-mythic';
+        var v = (rarity || '').toLowerCase();
+        if (v === 'uncommon') return 'rarity-uncommon';
+        if (v === 'rare') return 'rarity-rare';
+        if (v === 'epic') return 'rarity-epic';
+        if (v === 'legendary') return 'rarity-legendary';
+        if (v === 'mythic') return 'rarity-mythic';
         return 'rarity-common';
     }
 
-    function iconGlyph(iconName) {
-        const key = (iconName || '').toLowerCase();
+    var iconMap = {
+        play_circle:'▶', travel_explore:'🧭', weekend:'🛋', chair:'🪑', home:'🏠',
+        movie_filter:'🎞', live_tv:'📺', theaters:'🎭', local_fire_department:'🔥',
+        bolt:'⚡', military_tech:'🏆', auto_awesome:'✨', movie:'🎬', tv:'📺',
+        dark_mode:'🌙', nights_stay:'🌃', bedtime:'😴', wb_sunny:'🌅', light_mode:'☀',
+        sunny:'🌞', event:'📅', event_available:'🗓', celebration:'🎉', stars:'🌟',
+        collections_bookmark:'📚', inventory_2:'🗃', today:'📆', calendar_month:'🗓',
+        favorite:'❤', timeline:'📈', insights:'📊', all_inclusive:'♾', speed:'💨',
+        hourglass_bottom:'⏳', directions_run:'🏃', sports_score:'🏁', local_movies:'🍿',
+        emoji_events:'🏆'
+    };
 
-        const map = {
-            play_circle: '▶',
-            travel_explore: '🧭',
-            weekend: '🛋',
-            chair: '🪑',
-            home: '🏠',
-            movie_filter: '🎞',
-            live_tv: '📺',
-            theaters: '🎭',
-            local_fire_department: '🔥',
-            bolt: '⚡',
-            military_tech: '🏆',
-            auto_awesome: '✨',
-            movie: '🎬',
-            tv: '📺',
-            dark_mode: '🌙',
-            nights_stay: '🌃',
-            bedtime: '😴',
-            wb_sunny: '🌅',
-            light_mode: '☀',
-            sunny: '🌞',
-            event: '📅',
-            event_available: '🗓',
-            celebration: '🎉',
-            stars: '🌟',
-            collections_bookmark: '📚',
-            inventory_2: '🗃',
-            today: '📆',
-            calendar_month: '🗓',
-            favorite: '❤',
-            timeline: '📈',
-            insights: '📊',
-            all_inclusive: '♾',
-            speed: '💨',
-            hourglass_bottom: '⏳',
-            directions_run: '🏃',
-            sports_score: '🏁',
-            local_movies: '🍿'
-        };
-
-        return map[key] || '🏅';
+    function iconGlyph(name) {
+        return iconMap[(name || '').toLowerCase()] || '🏅';
     }
 
-    async function loadSummary(userId) {
-        const summary = await fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary');
-        setSummary(summary);
-        profileSubtitle.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '%';
+    function loadSummary(userId) {
+        return fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary').then(function (summary) {
+            setSummary(summary);
+            profileSubtitle.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '%';
+        });
     }
 
-    async function loadEquipped(userId) {
-        const badges = await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped');
-        renderEquippedBadges(badges);
-        renderShowcase(badges);
+    function loadEquipped(userId) {
+        return fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped').then(function (badges) {
+            renderEquippedBadges(badges);
+            renderShowcase(badges);
+        });
     }
 
-    async function loadLeaderboard() {
-        const entries = await fetchJson('Plugins/AchievementBadges/leaderboard?limit=10');
-
-        if (!entries || !entries.length) {
-            leaderboardBox.innerHTML = '<div class="abMuted">No leaderboard data yet.</div>';
-            return;
-        }
-
-        leaderboardBox.innerHTML = entries.map(function (entry, index) {
-            const displayName = entry.UserName || entry.UserId || 'Unknown';
-
-            return '<div class="abLeaderboardRow">' +
-                '<div><strong>#' + (index + 1) + '</strong> • ' + displayName + '</div>' +
-                '<div>' + entry.Unlocked + ' unlocked • ' + entry.Percentage + '%</div>' +
-            '</div>';
-        }).join('');
+    function loadLeaderboard() {
+        return fetchJson('Plugins/AchievementBadges/leaderboard?limit=10').then(function (entries) {
+            if (!entries || !entries.length) {
+                leaderboardBox.innerHTML = '<div class="abMuted">No leaderboard data yet.</div>';
+                return;
+            }
+            leaderboardBox.innerHTML = entries.map(function (entry, index) {
+                var displayName = entry.UserName || entry.UserId || 'Unknown';
+                return '<div class="abLeaderboardRow">' +
+                    '<div><strong>#' + (index + 1) + '</strong> &bull; ' + displayName + '</div>' +
+                    '<div>' + (entry.Score || 0) + ' pts &bull; ' + entry.Unlocked + ' unlocked &bull; ' + entry.Percentage + '%</div>' +
+                '</div>';
+            }).join('');
+        });
     }
 
-    async function loadServerStats() {
-        const stats = await fetchJson('Plugins/AchievementBadges/server/stats');
-
-        serverStatsBox.innerHTML =
-            '<div>Total users: ' + (stats.TotalUsers ?? 0) + '</div>' +
-            '<div style="margin-top:0.45em;">Total badges unlocked: ' + (stats.TotalBadgesUnlocked ?? 0) + '</div>' +
-            '<div style="margin-top:0.45em;">Total items watched: ' + (stats.TotalItemsWatched ?? 0) + '</div>' +
-            '<div style="margin-top:0.45em;">Total movies watched: ' + (stats.TotalMoviesWatched ?? 0) + '</div>' +
-            '<div style="margin-top:0.45em;">Total series completed: ' + (stats.TotalSeriesCompleted ?? 0) + '</div>' +
-            '<div style="margin-top:0.45em;">Most common badge: ' + (stats.MostCommonBadge || 'None') + '</div>';
+    function loadServerStats() {
+        return fetchJson('Plugins/AchievementBadges/server/stats').then(function (stats) {
+            serverStatsBox.innerHTML =
+                '<div>Total users: ' + (stats.TotalUsers || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">Total badges unlocked: ' + (stats.TotalBadgesUnlocked || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">Total items watched: ' + (stats.TotalItemsWatched || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">Total movies watched: ' + (stats.TotalMoviesWatched || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">Total series completed: ' + (stats.TotalSeriesCompleted || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">Most common badge: ' + (stats.MostCommonBadge || 'None') + '</div>';
+        });
     }
 
     function renderShowcase(badges) {
         showcaseRow.innerHTML = '';
-
         if (!badges || badges.length === 0) {
             showcaseRow.innerHTML = '<div class="abMuted">Equip badges to build your showcase.</div>';
             return;
         }
-
         badges.forEach(function (badge) {
-            const card = document.createElement('div');
+            var card = document.createElement('div');
             card.className = 'abShowcaseCard';
-
             card.innerHTML =
                 '<div class="abShowcaseIcon">' + iconGlyph(badge.Icon) + '</div>' +
                 '<div>' +
                     '<div style="font-weight:700;">' + badge.Title + '</div>' +
                     '<div class="' + rarityClass(badge.Rarity) + '" style="font-size:0.88em;">' + badge.Rarity + '</div>' +
                 '</div>';
-
             showcaseRow.appendChild(card);
         });
     }
 
     function renderEquippedBadges(badges) {
         equippedRow.innerHTML = '';
-
         if (!badges || badges.length === 0) {
             equippedEmpty.style.display = 'block';
             return;
         }
-
         equippedEmpty.style.display = 'none';
-
         badges.forEach(function (badge) {
-            const card = document.createElement('div');
+            var card = document.createElement('div');
             card.className = 'abBadgeCard';
             card.setAttribute('data-badge-id', badge.Id);
-
             card.innerHTML =
                 '<div class="abBadgeHeader">' +
                     '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
@@ -760,55 +709,48 @@ padding:1em;
                 '</div>' +
                 '<div class="abBadgeFooter">' +
                     '<div class="abUnlocked">Equipped</div>' +
-                    '<button type="button" style="padding:0.45em 0.7em;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;">Unequip</button>' +
+                    '<button type="button" class="abBtn">Unequip</button>' +
                 '</div>';
-
-            const button = card.querySelector('button');
-            button.addEventListener('click', function () {
+            card.querySelector('button').addEventListener('click', function () {
                 unequipBadge(badge.Id);
             });
-
             equippedRow.appendChild(card);
         });
     }
 
     function renderBadges(badges) {
         grid.innerHTML = '';
-
         if (!badges || badges.length === 0) {
             emptyState.style.display = 'block';
             return;
         }
-
         emptyState.style.display = 'none';
 
-        const equippedIds = new Set(
-            Array.from(equippedRow.children)
-                .map(function (card) {
-                    return card.getAttribute('data-badge-id');
-                })
-                .filter(Boolean)
-        );
+        var equippedIds = {};
+        Array.from(equippedRow.children).forEach(function (card) {
+            var bid = card.getAttribute('data-badge-id');
+            if (bid) equippedIds[bid] = true;
+        });
 
         badges.forEach(function (badge) {
-            const current = badge.CurrentValue || 0;
-            const target = badge.TargetValue || 0;
-            const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-            const isEquipped = equippedIds.has(badge.Id);
+            var current = badge.CurrentValue || 0;
+            var target = badge.TargetValue || 0;
+            var progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+            var isEquipped = !!equippedIds[badge.Id];
 
-            const card = document.createElement('div');
+            var card = document.createElement('div');
             card.className = 'abBadgeCard';
 
-            const buttonLabel = isEquipped ? 'Unequip' : 'Equip';
-            const buttonDisabled = !badge.Unlocked ? 'disabled' : '';
-            const buttonOpacity = !badge.Unlocked ? '0.5' : '1';
+            var buttonLabel = isEquipped ? 'Unequip' : 'Equip';
+            var buttonDisabled = !badge.Unlocked ? 'disabled' : '';
+            var buttonOpacity = !badge.Unlocked ? '0.5' : '1';
 
             card.innerHTML =
                 '<div class="abBadgeHeader">' +
                     '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
                     '<div style="flex:1;">' +
                         '<div class="abBadgeTitle">' + badge.Title + '</div>' +
-                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + ' • ' + badge.Category + '</div>' +
+                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + ' &bull; ' + badge.Category + '</div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="abBadgeDescription">' + badge.Description + '</div>' +
@@ -822,18 +764,13 @@ padding:1em;
                 '</div>' +
                 '<div class="abBadgeFooter">' +
                     '<div class="' + (badge.Unlocked ? 'abUnlocked' : 'abLocked') + '">' + (badge.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
-                    '<button type="button" ' + buttonDisabled + ' style="padding:0.55em 0.85em;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;opacity:' + buttonOpacity + ';">' + buttonLabel + '</button>' +
+                    '<button type="button" class="abBtn" ' + buttonDisabled + ' style="opacity:' + buttonOpacity + ';">' + buttonLabel + '</button>' +
                 '</div>';
 
-            const button = card.querySelector('button');
-
             if (badge.Unlocked) {
-                button.addEventListener('click', function () {
-                    if (isEquipped) {
-                        unequipBadge(badge.Id);
-                    } else {
-                        equipBadge(badge.Id);
-                    }
+                card.querySelector('.abBadgeFooter button').addEventListener('click', function () {
+                    if (isEquipped) { unequipBadge(badge.Id); }
+                    else { equipBadge(badge.Id); }
                 });
             }
 
@@ -841,39 +778,37 @@ padding:1em;
         });
     }
 
-    async function reloadAll() {
-        const userId = getUserId();
+    function reloadAll() {
+        var userId = getUserId();
+        if (!userId) return Promise.reject(new Error('No user ID was found for this page.'));
 
-        if (!userId) {
-            throw new Error('No user ID was found for this page.');
-        }
+        profileTitle.textContent = 'Achievement Profile';
 
-        profileTitle.textContent = 'Achievement Profile • ' + userId;
-
-        const badges = await fetchJson('Plugins/AchievementBadges/users/' + userId);
-        await loadSummary(userId);
-        await loadEquipped(userId);
-        await loadLeaderboard();
-        await loadServerStats();
-        renderBadges(badges);
+        return fetchJson('Plugins/AchievementBadges/users/' + userId).then(function (badges) {
+            return Promise.all([
+                loadSummary(userId),
+                loadEquipped(userId),
+                loadLeaderboard(),
+                loadServerStats()
+            ]).then(function () {
+                renderBadges(badges);
+            });
+        });
     }
 
-    async function loadBadges() {
-        const userId = getUserId();
-
+    function loadBadges() {
+        var userId = getUserId();
         if (!userId) {
             setStatus('');
             setError('No user ID was found for this page.');
             return;
         }
-
         clearError();
         setStatus('Loading badges...');
 
-        try {
-            await reloadAll();
+        reloadAll().then(function () {
             setStatus('Badges loaded.');
-        } catch (error) {
+        }).catch(function (error) {
             grid.innerHTML = '';
             equippedRow.innerHTML = '';
             showcaseRow.innerHTML = '';
@@ -881,145 +816,121 @@ padding:1em;
             emptyState.style.display = 'block';
             leaderboardBox.innerHTML = 'Failed to load leaderboard.';
             serverStatsBox.innerHTML = 'Failed to load server stats.';
-            profileSubtitle.textContent = 'Could not load profile showcase.';
+            profileSubtitle.textContent = 'Could not load profile.';
             setSummary({ Unlocked: 0, Total: 0, Percentage: 0, EquippedCount: 0 });
             setStatus('');
-            setError('Failed to load badges. ' + error.message);
-        }
+            setError('Failed to load badges. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function simulatePlayback() {
-        const userId = getUserId();
-
+    function simulatePlayback() {
+        var userId = getUserId();
         if (!userId) {
             setStatus('');
             setError('No user ID was found for this page.');
             return;
         }
-
         clearError();
         setStatus('Simulating playback...');
 
-        try {
-            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/simulate-playback', {
-                method: 'POST'
-            });
-            await reloadAll();
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/simulate-playback', 'POST').then(function () {
+            return reloadAll();
+        }).then(function () {
             setStatus('Playback simulated successfully.');
-        } catch (error) {
+        }).catch(function (error) {
             setStatus('');
-            setError('Failed to simulate playback. ' + error.message);
-        }
+            setError('Failed to simulate playback. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function resetBadges() {
-        const userId = getUserId();
-
+    function resetBadges() {
+        var userId = getUserId();
         if (!userId) {
             setStatus('');
             setError('No user ID was found for this page.');
             return;
         }
-
         clearError();
         setStatus('Resetting badges...');
 
-        try {
-            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/reset', {
-                method: 'POST'
-            });
-            await reloadAll();
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/reset', 'POST').then(function () {
+            return reloadAll();
+        }).then(function () {
             setStatus('Badges reset successfully.');
-        } catch (error) {
+        }).catch(function (error) {
             setStatus('');
-            setError('Failed to reset badges. ' + error.message);
-        }
+            setError('Failed to reset badges. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function equipBadge(badgeId) {
-        const userId = getUserId();
-
+    function equipBadge(badgeId) {
+        var userId = getUserId();
         clearError();
         setStatus('Equipping badge...');
 
-        try {
-            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, {
-                method: 'POST'
-            });
-            await reloadAll();
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'POST').then(function () {
+            return reloadAll();
+        }).then(function () {
             setStatus('Badge equipped.');
-        } catch (error) {
+        }).catch(function (error) {
             setStatus('');
-            setError('Failed to equip badge. ' + error.message);
-        }
+            setError('Failed to equip badge. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function unequipBadge(badgeId) {
-        const userId = getUserId();
-
+    function unequipBadge(badgeId) {
+        var userId = getUserId();
         clearError();
         setStatus('Unequipping badge...');
 
-        try {
-            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, {
-                method: 'DELETE'
-            });
-            await reloadAll();
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'DELETE').then(function () {
+            return reloadAll();
+        }).then(function () {
             setStatus('Badge unequipped.');
-        } catch (error) {
+        }).catch(function (error) {
             setStatus('');
-            setError('Failed to unequip badge. ' + error.message);
-        }
+            setError('Failed to unequip badge. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function useMyAccount() {
+    function useMyAccount() {
         clearError();
         setStatus('Detecting current user...');
 
-        try {
-            const currentUserId = await detectCurrentUserId();
-
-            if (!currentUserId) {
-                throw new Error('Could not determine current user.');
-            }
-
+        detectCurrentUserId().then(function (currentUserId) {
+            if (!currentUserId) throw new Error('Could not determine current user.');
             userIdInput.value = currentUserId;
-            await loadBadges();
-        } catch (error) {
+            loadBadges();
+        }).catch(function (error) {
             setStatus('');
-            setError('Failed to detect current user. ' + error.message);
-        }
+            setError('Failed to detect current user. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
-    async function initialisePage() {
+    function initialisePage() {
         setActiveTab('badges');
         clearError();
         setStatus('Loading profile...');
 
-        try {
-            const initialUserId = getUserIdFromUrl();
+        var initialUserId = getUserIdFromUrl();
+        if (initialUserId) {
+            userIdInput.value = initialUserId;
+            loadBadges();
+            return;
+        }
 
-            if (initialUserId) {
-                userIdInput.value = initialUserId;
-                await loadBadges();
-                return;
-            }
-
-            const currentUserId = await detectCurrentUserId();
-
+        detectCurrentUserId().then(function (currentUserId) {
             if (currentUserId) {
                 userIdInput.value = currentUserId;
-                await loadBadges();
-                return;
+                loadBadges();
+            } else {
+                setStatus('');
+                setError('Could not detect a user automatically. Use "Use my account" or enter a user ID manually.');
             }
-
-            userIdInput.value = '';
+        }).catch(function (error) {
             setStatus('');
-            setError('Could not detect a user automatically. Use "Use my account" or enter a user ID manually.');
-        } catch (error) {
-            setStatus('');
-            setError('Failed to initialise achievements page. ' + error.message);
-        }
+            setError('Failed to initialise page. ' + (error && error.message ? error.message : String(error)));
+        });
     }
 
     tabBadgesBtn.addEventListener('click', function () { setActiveTab('badges'); });
@@ -1033,21 +944,6 @@ padding:1em;
     resetBtn.addEventListener('click', resetBadges);
 
     initialisePage();
-
-    // Inject sidebar and routing scripts into document.head once.
-    // Because they're in <head>, they persist across Jellyfin route changes.
-    (function () {
-        function addScript(id, src) {
-            if (!document.getElementById(id)) {
-                var s = document.createElement('script');
-                s.id = id;
-                s.src = src;
-                document.head.appendChild(s);
-            }
-        }
-        addScript('ab-sidebar-injected', '/Plugins/AchievementBadges/client-script/sidebar');
-        addScript('ab-standalone-injected', '/Plugins/AchievementBadges/client-script/standalone');
-    })();
 })();
 </script>
 
