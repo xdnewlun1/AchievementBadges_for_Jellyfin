@@ -499,6 +499,15 @@ public class AchievementBadgesController : ControllerBase
         return Ok(new { LibraryCompletionPercents = profile?.Counters.LibraryCompletionPercents ?? new Dictionary<string, int>() });
     }
 
+    // ---------- Watch calendar (for heatmap) ------------------------
+
+    [HttpGet("users/{userId}/watch-calendar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetWatchCalendar([FromRoute] string userId, [FromQuery] int days = 90)
+    {
+        return Ok(new { Days = days, Counts = _badgeService.GetWatchCalendar(userId, days) });
+    }
+
     // ---------- Recap ------------------------------------------------
 
     [HttpGet("users/{userId}/recap")]
@@ -733,6 +742,20 @@ public class AchievementBadgesController : ControllerBase
     [HttpGet("users/{userId}/daily-quest")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetDailyQuest([FromRoute] string userId)
+    {
+        return Ok(_questService.GetOrCreateDaily(userId));
+    }
+
+    [HttpGet("users/{userId}/weekly-quest")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetWeeklyQuest([FromRoute] string userId)
+    {
+        return Ok(_questService.GetOrCreateWeekly(userId));
+    }
+
+    [HttpGet("users/{userId}/quests")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetAllQuests([FromRoute] string userId)
     {
         return Ok(_questService.GetOrCreate(userId));
     }

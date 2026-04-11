@@ -257,35 +257,31 @@ public class WatchHistoryBackfillService
         return string.Empty;
     }
 
-    private static (List<string> directors, List<string> actors) GetPeople(BaseItem item)
+    private (List<string> directors, List<string> actors) GetPeople(BaseItem item)
     {
         var directors = new List<string>();
         var actors = new List<string>();
         try
         {
-            var peopleProp = item.GetType().GetProperty("People");
-            var people = peopleProp?.GetValue(item) as System.Collections.IEnumerable;
-            if (people is null) return (directors, actors);
-
+            var people = _libraryManager.GetPeople(item);
+            if (people == null) return (directors, actors);
             foreach (var p in people)
             {
-                if (p is null) continue;
-                var type = p.GetType();
-                var name = type.GetProperty("Name")?.GetValue(p) as string;
-                var role = type.GetProperty("Type")?.GetValue(p)?.ToString();
-                if (string.IsNullOrWhiteSpace(name)) continue;
+                if (p is null || string.IsNullOrWhiteSpace(p.Name)) continue;
+                var role = p.Type.ToString();
                 if (string.Equals(role, "Director", StringComparison.OrdinalIgnoreCase))
                 {
-                    directors.Add(name);
+                    directors.Add(p.Name);
                 }
                 else if (string.Equals(role, "Actor", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (actors.Count < 5) actors.Add(name);
+                    if (actors.Count < 5) actors.Add(p.Name);
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogDebug(ex, "[AchievementBadges] GetPeople failed for {ItemId}", item.Id);
         }
         return (directors, actors);
     }

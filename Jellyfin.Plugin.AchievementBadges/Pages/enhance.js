@@ -6,7 +6,22 @@
     var HOME_ID = 'ab-home-widget';
     var DETAIL_ID = 'ab-detail-ribbon';
     var LAST_SEEN_KEY = 'ab-last-unlock-seen';
+    var SHOWN_IDS_KEY = 'ab-shown-unlock-ids';
     var features = { EnableUnlockToasts: true, EnableHomeWidget: true, EnableItemDetailRibbon: true };
+
+    function getShownIds() {
+        try {
+            var raw = sessionStorage.getItem(SHOWN_IDS_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+    }
+    function markShown(id) {
+        try {
+            var map = getShownIds();
+            map[id] = Date.now();
+            sessionStorage.setItem(SHOWN_IDS_KEY, JSON.stringify(map));
+        } catch (e) {}
+    }
 
     function getApi() { return window.ApiClient || window.apiClient || null; }
 
@@ -86,11 +101,26 @@
     function pollUnlocks() {
         if (!features.EnableUnlockToasts) return;
         var uid = getUserId(); if (!uid) return;
-        var since = localStorage.getItem(LAST_SEEN_KEY) || new Date(Date.now() - 60000).toISOString();
+        // On the very first poll of a fresh browser, seed LAST_SEEN to now so we
+        // don't replay old unlocks. Subsequent polls use the stored value.
+        var stored = localStorage.getItem(LAST_SEEN_KEY);
+        if (!stored) {
+            var now = new Date().toISOString();
+            localStorage.setItem(LAST_SEEN_KEY, now);
+            return; // skip the first fetch entirely — there can be nothing new
+        }
+        var since = stored;
+        var shown = getShownIds();
         fetchJson('Plugins/AchievementBadges/users/' + uid + '/unlocks-since?since=' + encodeURIComponent(since))
             .then(function (res) {
                 if (res && res.Badges) {
-                    res.Badges.forEach(function (b) { showToast(b); });
+                    res.Badges.forEach(function (b) {
+                        var key = b.Id + '|' + (b.UnlockedAt || '');
+                        if (!shown[key]) {
+                            showToast(b);
+                            markShown(key);
+                        }
+                    });
                 }
                 if (res && res.Now) { localStorage.setItem(LAST_SEEN_KEY, res.Now); }
             })
@@ -182,7 +212,21 @@
 
     function start() {
         var style = document.createElement('style');
-        style.textContent = '@keyframes abSlideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
+        style.textContent =
+            '@keyframes abSlideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }' +
+            // Hide our injected header/sidebar badges when the video player is active
+            '.videoOsdBottom ~ * #ab-header-badges,' +
+            '.videoPlayer #ab-header-badges,' +
+            'body.videoPlayerContainerPresent #ab-header-badges,' +
+            'body.videoOsdOpen #ab-header-badges,' +
+            'body.osd-open #ab-header-badges,' +
+            'body:has(.videoPlayerContainer) #ab-header-badges,' +
+            'body:has(.videoOsdBottom) #ab-header-badges,' +
+            'body:has(.videoPlayer) #ab-header-badges,' +
+            'body:has(#videoOsdPage) #ab-header-badges,' +
+            'body:has(.mainAnimatedPage.videoOsdPage) #ab-header-badges { display: none !important; }' +
+            '.videoPlayerContainer #ab-toast-container,' +
+            'body:has(.videoPlayerContainer) #ab-toast-container { display: none !important; }';
         document.head.appendChild(style);
 
         fetchJson('Plugins/AchievementBadges/admin/ui-features').then(function (f) {

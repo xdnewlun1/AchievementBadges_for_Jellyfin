@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.3",
+        "changelog": "Feedback fixes. Profile card link now uses absolute path (was 404). Toast notifications seed LAST_SEEN to now on first load and dedupe shown unlocks via sessionStorage so they no longer replay on every refresh. Header badge pills now hidden while the video player is active. Watch heatmap is wired to real data from a new /watch-calendar endpoint and colors cells by intensity. Director/actor tracking now uses ILibraryManager.GetPeople instead of reflection - top directors/actors will populate in Recap after a rescan. Sort badges by rarity / progress / title. Filter by individual rarity tier. Dedicated Quests tab with both daily AND weekly quests (12 daily templates, 8 weekly templates). Admin page restyled with modern expanding sections, dark form controls, focus rings. Plugin now auto-evaluates every user's badges on startup so new badges unlock automatically after updates without needing Scan All Users.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.3/Jellyfin.Plugin.AchievementBadgesv1.5.3.zip",
+        "checksum": "FFAE52FFCA081DCE48E4ED7BB3162AD8"
+      },
+      {
         "version": "1.5.2",
         "changelog": "Diagnostic + resilience hotfix for sidebar/header injection missing on some servers. Added verbose console logging from inline injection script so we can see exactly which step fails. Added aggressive retry loop (every 1s for 15s plus 500ms/2s delayed injections) so other plugins rebuilding the nav menu can no longer permanently clobber our entry. Expanded nav container selectors to match more Jellyfin themes. Added server-side logging to the middleware so we can confirm if it's even firing for /web/index.html requests.",
         "targetAbi": "10.11.0.0",

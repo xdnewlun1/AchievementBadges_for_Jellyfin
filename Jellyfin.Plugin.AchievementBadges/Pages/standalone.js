@@ -88,7 +88,11 @@
         if (document.getElementById('ab-standalone-css')) return;
         var s = document.createElement('style');
         s.id = 'ab-standalone-css';
-        s.textContent = '#' + ROOT_ID + '{position:fixed;inset:0;z-index:999999;overflow-y:auto;padding:2em;background:var(--theme-body-background,#181818);color:#fff;font-family:inherit;}' +
+        s.textContent = '#' + ROOT_ID + '{position:fixed;inset:0;z-index:999999;overflow-y:auto;padding:2em;background:var(--theme-body-background,#181818);color:#fff;font-family:inherit;color-scheme:dark;}' +
+            '#' + ROOT_ID + ' .ab-input,#' + ROOT_ID + ' .ab-select{padding:0.6em 0.9em;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(20,24,32,0.85);color:#fff;font-size:0.92em;font-family:inherit;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;}' +
+            '#' + ROOT_ID + ' .ab-select{background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 16 16%22><path fill=%22%23fff%22 d=%22M4 6l4 4 4-4z%22/></svg>\');background-repeat:no-repeat;background-position:right 0.7em center;padding-right:2em;}' +
+            '#' + ROOT_ID + ' .ab-select option{background:#181b24;color:#fff;}' +
+            '#' + ROOT_ID + ' .ab-input:focus,#' + ROOT_ID + ' .ab-select:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.25);}' +
             '#' + ROOT_ID + ' .ab-wrap{max-width:1500px;margin:0 auto;}' +
             '#' + ROOT_ID + ' .ab-topbar{display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap;margin-bottom:1.2em;}' +
             '#' + ROOT_ID + ' .ab-back{padding:0.6em 1em;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5em;font-weight:700;}' +
@@ -189,18 +193,33 @@
                 '</div>' +
                 '<div class="ab-tabs">' +
                     '<button type="button" class="ab-tab active" id="abSaTabBadges">My Badges</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabQuests">Quests</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabRecap">Recap</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabLb">Leaderboard</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabStats">Stats</button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
-                    '<div style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
-                        '<input type="search" id="abSaSearch" placeholder="Search badges by title, category, rarity..." style="flex:1; min-width:240px; padding:0.6em 0.9em; border-radius:999px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:inherit; font-size:0.95em;">' +
-                        '<select id="abSaFilter" style="padding:0.6em 0.9em; border-radius:999px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:inherit;">' +
+                    '<div class="ab-filter-row" style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
+                        '<input type="search" id="abSaSearch" placeholder="Search badges by title, category, rarity..." class="ab-input" style="flex:1; min-width:240px;">' +
+                        '<select id="abSaFilter" class="ab-select">' +
                             '<option value="all">All badges</option>' +
                             '<option value="unlocked">Unlocked only</option>' +
                             '<option value="locked">Locked only</option>' +
                             '<option value="close">Close to unlock (&gt;50%)</option>' +
+                            '<option value="r-common">Rarity: Common</option>' +
+                            '<option value="r-uncommon">Rarity: Uncommon</option>' +
+                            '<option value="r-rare">Rarity: Rare</option>' +
+                            '<option value="r-epic">Rarity: Epic</option>' +
+                            '<option value="r-legendary">Rarity: Legendary</option>' +
+                            '<option value="r-mythic">Rarity: Mythic</option>' +
+                        '</select>' +
+                        '<select id="abSaSort" class="ab-select" title="Sort order">' +
+                            '<option value="default">Default</option>' +
+                            '<option value="rarity-desc">Sort: Rarity (highest)</option>' +
+                            '<option value="rarity-asc">Sort: Rarity (lowest)</option>' +
+                            '<option value="progress-desc">Sort: Progress (most)</option>' +
+                            '<option value="progress-asc">Sort: Progress (least)</option>' +
+                            '<option value="title-asc">Sort: Title A-Z</option>' +
                         '</select>' +
                     '</div>' +
                     '<h3 style="margin:0 0 0.75em;">Equipped badges</h3>' +
@@ -208,6 +227,16 @@
                     '<div id="abSaEquipped" class="ab-grid"></div>' +
                     '<div id="abSaGrid" class="ab-grid" style="margin-top:1.5em;"></div>' +
                     '<div id="abSaEmptyFilter" class="ab-muted" style="display:none; margin-top:1em;">No badges match your filter.</div>' +
+                '</div>' +
+                '<div id="abSaPanelQuests" class="ab-panel" style="display:none;">' +
+                    '<div class="ab-panel-card">' +
+                        '<h3 style="margin:0 0 0.5em;">Daily quest</h3>' +
+                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.75em;">Resets at midnight. Everyone shares the same daily challenge.</div>' +
+                        '<div id="abSaDailyQuest">Loading...</div>' +
+                        '<h3 style="margin:1.5em 0 0.5em;">Weekly quest</h3>' +
+                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.75em;">Resets every Monday. Bigger reward, harder target.</div>' +
+                        '<div id="abSaWeeklyQuest">Loading...</div>' +
+                    '</div>' +
                 '</div>' +
                 '<div id="abSaPanelRecap" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
@@ -238,8 +267,6 @@
                         '<div id="abSaCharts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1em;"></div>' +
                         '<h3 style="margin:1.5em 0 0.75em;">Score bank & prestige</h3>' +
                         '<div id="abSaBank">Loading...</div>' +
-                        '<h3 style="margin:1.5em 0 0.75em;">Daily quest</h3>' +
-                        '<div id="abSaQuest">Loading...</div>' +
                         '<h3 style="margin:1.5em 0 0.75em;">Server stats</h3>' +
                         '<div id="abSaServerStats">Loading...</div>' +
                     '</div>' +
@@ -254,14 +281,45 @@
     }
 
     function setTab(name) {
-        var panels = { badges: 'abSaPanelBadges', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', stats: 'abSaPanelStats' };
-        var tabs = { badges: 'abSaTabBadges', recap: 'abSaTabRecap', lb: 'abSaTabLb', stats: 'abSaTabStats' };
+        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', stats: 'abSaPanelStats' };
+        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', stats: 'abSaTabStats' };
         for (var k in panels) {
             var p = el(panels[k]); if (p) p.style.display = k === name ? 'block' : 'none';
             var t = el(tabs[k]); if (t) t.classList.toggle('active', k === name);
         }
         if (name === 'recap') { loadRecap('week'); }
         if (name === 'stats') { loadStats(); }
+        if (name === 'quests') { loadQuests(); }
+    }
+
+    function renderQuestCard(q, containerId) {
+        var box = el(containerId);
+        if (!box) return;
+        if (!q || !q.Title) { box.innerHTML = '<div class="ab-muted">No quest available.</div>'; return; }
+        var pct = q.Target ? Math.round(100 * (q.Current || 0) / q.Target) : 0;
+        var borderColor = q.Completed ? '#4caf50' : 'rgba(255,255,255,0.08)';
+        box.innerHTML =
+            '<div style="padding:0.85em 1em; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid ' + borderColor + ';">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                    '<div style="font-weight:700; font-size:1.05em;">' + escapeHtml(q.Title) + (q.Completed ? ' \u2713' : '') + '</div>' +
+                    '<div class="ab-muted" style="font-size:0.8em;">+' + (q.Reward || 0) + ' bank</div>' +
+                '</div>' +
+                '<div class="ab-muted" style="font-size:0.88em; margin-top:0.3em;">' + escapeHtml(q.Description || '') + '</div>' +
+                '<div style="height:8px; border-radius:4px; background:rgba(255,255,255,0.1); margin-top:0.75em; overflow:hidden;">' +
+                    '<div style="height:100%; width:' + pct + '%; background:' + (q.Completed ? '#4caf50' : '#667eea') + '; transition:width 0.4s;"></div>' +
+                '</div>' +
+                '<div class="ab-muted" style="font-size:0.78em; margin-top:0.35em;">' + (q.Current || 0) + ' / ' + (q.Target || 0) + '</div>' +
+            '</div>';
+    }
+
+    function loadQuests() {
+        if (!userId) return;
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/quests').then(function (res) {
+            renderQuestCard(res && res.Daily, 'abSaDailyQuest');
+            renderQuestCard(res && res.Weekly, 'abSaWeeklyQuest');
+        }).catch(function () {
+            var d = el('abSaDailyQuest'); if (d) d.innerHTML = '<div class="ab-muted">Failed to load quests.</div>';
+        });
     }
 
     function applyThemeForTier(tierName) {
@@ -276,6 +334,9 @@
     var equippedIdsGlobal = {};
     var currentSearch = '';
     var currentFilter = 'all';
+    var currentSort = 'default';
+
+    var rarityRank = { 'common': 1, 'uncommon': 2, 'rare': 3, 'epic': 4, 'legendary': 5, 'mythic': 6 };
 
     function passesFilter(b) {
         var q = currentSearch.toLowerCase();
@@ -290,14 +351,49 @@
             var tar = b.TargetValue || 0, cur = b.CurrentValue || 0;
             return tar > 0 && (cur / tar) > 0.5;
         }
+        if (currentFilter.indexOf('r-') === 0) {
+            var want = currentFilter.substring(2);
+            return (b.Rarity || '').toLowerCase() === want;
+        }
         return true;
+    }
+
+    function applySort(arr) {
+        var copy = arr.slice();
+        switch (currentSort) {
+            case 'rarity-desc':
+                copy.sort(function (a, b) { return (rarityRank[(b.Rarity || '').toLowerCase()] || 0) - (rarityRank[(a.Rarity || '').toLowerCase()] || 0); });
+                break;
+            case 'rarity-asc':
+                copy.sort(function (a, b) { return (rarityRank[(a.Rarity || '').toLowerCase()] || 0) - (rarityRank[(b.Rarity || '').toLowerCase()] || 0); });
+                break;
+            case 'progress-desc':
+                copy.sort(function (a, b) {
+                    var pa = (a.TargetValue || 0) > 0 ? (a.CurrentValue || 0) / a.TargetValue : 0;
+                    var pb = (b.TargetValue || 0) > 0 ? (b.CurrentValue || 0) / b.TargetValue : 0;
+                    return pb - pa;
+                });
+                break;
+            case 'progress-asc':
+                copy.sort(function (a, b) {
+                    var pa = (a.TargetValue || 0) > 0 ? (a.CurrentValue || 0) / a.TargetValue : 0;
+                    var pb = (b.TargetValue || 0) > 0 ? (b.CurrentValue || 0) / b.TargetValue : 0;
+                    return pa - pb;
+                });
+                break;
+            case 'title-asc':
+                copy.sort(function (a, b) { return (a.Title || '').localeCompare(b.Title || ''); });
+                break;
+        }
+        return copy;
     }
 
     function applyFilter() {
         var filtered = allBadges.filter(passesFilter);
-        renderBadges(filtered, equippedIdsGlobal);
+        var sorted = applySort(filtered);
+        renderBadges(sorted, equippedIdsGlobal);
         var empty = el('abSaEmptyFilter');
-        if (empty) empty.style.display = (filtered.length === 0 && allBadges.length > 0) ? 'block' : 'none';
+        if (empty) empty.style.display = (sorted.length === 0 && allBadges.length > 0) ? 'block' : 'none';
     }
 
     function loadRecap(period) {
@@ -330,11 +426,11 @@
         if (!userId) return;
         Promise.all([
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/daily-quest'),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=year')
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=year'),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-calendar?days=90')
         ]).then(function (r) {
-            var bank = r[0], quest = r[1], summary = r[2], recap = r[3];
+            var bank = r[0], summary = r[1], recap = r[2], calendar = r[3];
             var bankBox = el('abSaBank');
             if (bankBox) {
                 var prestigeStars = '';
@@ -359,25 +455,11 @@
                 });
             }
 
-            var questBox = el('abSaQuest');
-            if (questBox && quest) {
-                var pct = quest.Target ? Math.round(100 * (quest.Current || 0) / quest.Target) : 0;
-                questBox.innerHTML =
-                    '<div style="padding:0.75em 1em; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid ' + (quest.Completed ? '#4caf50' : 'rgba(255,255,255,0.08)') + ';">' +
-                        '<div style="font-weight:700;">' + (quest.Title || 'No quest') + (quest.Completed ? ' \u2713' : '') + '</div>' +
-                        '<div class="ab-muted" style="font-size:0.85em;">' + (quest.Description || '') + ' \u2022 +' + (quest.Reward || 0) + ' bank</div>' +
-                        '<div style="height:6px; border-radius:3px; background:rgba(255,255,255,0.1); margin-top:0.5em; overflow:hidden;">' +
-                            '<div style="height:100%; width:' + pct + '%; background:' + (quest.Completed ? '#4caf50' : '#667eea') + ';"></div>' +
-                        '</div>' +
-                        '<div class="ab-muted" style="font-size:0.75em; margin-top:0.25em;">' + (quest.Current || 0) + ' / ' + (quest.Target || 0) + '</div>' +
-                    '</div>';
-            }
-
-            renderCharts(recap, summary);
+            renderCharts(recap, summary, calendar);
         }).catch(function () { });
     }
 
-    function renderCharts(recap, summary) {
+    function renderCharts(recap, summary, calendar) {
         var box = el('abSaCharts'); if (!box) return;
 
         // Genre radar (SVG)
@@ -410,7 +492,7 @@
         }
 
         // Watch heatmap (last 90 days)
-        var heatSvg = renderHeatmap(recap);
+        var heatSvg = renderHeatmap(calendar);
 
         // Duration histogram
         var histSvg = renderHistogram(summary);
@@ -421,22 +503,37 @@
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Stats snapshot</h4>' + histSvg + '</div>';
     }
 
-    function renderHeatmap(recap) {
-        // We don't have per-day data via recap but we can approximate using total items scaled.
-        // Instead, query the profile counter dates via a fake approach; for now, render a static grid.
+    function renderHeatmap(calendar) {
+        var counts = (calendar && calendar.Counts) || {};
+        var max = 0;
+        for (var k in counts) { if (counts[k] > max) max = counts[k]; }
+        if (max === 0) max = 1;
+
         var today = new Date();
+        // Align the grid so that today is in the top row, 90 days back, columns are weeks
         var cells = [];
         for (var i = 89; i >= 0; i--) {
             var d = new Date(today); d.setDate(today.getDate() - i);
-            cells.push(d);
+            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            cells.push({ date: d, key: key, count: counts[key] || 0 });
         }
-        var svgCells = cells.map(function (d, i) {
+
+        function colorFor(count) {
+            if (count === 0) return 'rgba(255,255,255,0.05)';
+            var intensity = Math.min(1, 0.15 + (count / max) * 0.85);
+            return 'rgba(102, 126, 234, ' + intensity.toFixed(2) + ')';
+        }
+
+        var svgCells = cells.map(function (c, i) {
             var col = Math.floor(i / 7);
             var row = i % 7;
-            // Intensity is random-ish placeholder; real data would come from WatchDates
-            return '<rect x="' + (col * 14) + '" y="' + (row * 14) + '" width="12" height="12" rx="2" fill="rgba(102,126,234,0.18)" />';
+            var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
+            return '<rect x="' + (col * 14) + '" y="' + (row * 14) + '" width="12" height="12" rx="2" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
         }).join('');
-        return '<svg viewBox="0 0 200 110" width="100%" height="110">' + svgCells + '</svg>';
+
+        var width = Math.ceil(90 / 7) * 14;
+        return '<svg viewBox="0 0 ' + width + ' 110" width="100%" height="110">' + svgCells + '</svg>' +
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Last 90 days · hover for details · max ' + max + ' items/day</div>';
     }
 
     function renderHistogram(summary) {
@@ -559,7 +656,7 @@
             }
 
             var cardLink = el('abSaProfileCardLink');
-            if (cardLink) cardLink.href = 'Plugins/AchievementBadges/users/' + userId + '/profile-card';
+            if (cardLink) cardLink.href = buildUrl('Plugins/AchievementBadges/users/' + userId + '/profile-card');
 
             allBadges = badges || [];
             renderShowcase(equipped);
@@ -612,6 +709,7 @@
         root.style.display = 'block';
 
         el('abSaTabBadges').addEventListener('click', function () { setTab('badges'); });
+        el('abSaTabQuests').addEventListener('click', function () { setTab('quests'); });
         el('abSaTabRecap').addEventListener('click', function () { setTab('recap'); });
         el('abSaTabLb').addEventListener('click', function () { setTab('lb'); });
         el('abSaTabStats').addEventListener('click', function () { setTab('stats'); loadStats(); });
@@ -625,6 +723,11 @@
         var filter = el('abSaFilter');
         if (filter) filter.addEventListener('change', function () {
             currentFilter = filter.value || 'all';
+            applyFilter();
+        });
+        var sortEl = el('abSaSort');
+        if (sortEl) sortEl.addEventListener('change', function () {
+            currentSort = sortEl.value || 'default';
             applyFilter();
         });
 

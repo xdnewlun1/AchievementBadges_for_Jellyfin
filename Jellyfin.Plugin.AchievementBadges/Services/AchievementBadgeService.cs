@@ -42,6 +42,72 @@ public class AchievementBadgeService
         Load();
     }
 
+    public Dictionary<string, int> GetWatchCalendar(string userId, int days = 90)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var result = new Dictionary<string, int>();
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+            {
+                return result;
+            }
+
+            var c = profile.Counters;
+            var cutoff = DateOnly.FromDateTime(DateTime.Today.AddDays(-days));
+
+            foreach (var kvp in c.MoviesByDate)
+            {
+                if (!DateOnly.TryParse(kvp.Key, out var d) || d < cutoff) continue;
+                result.TryGetValue(kvp.Key, out var cur);
+                result[kvp.Key] = cur + kvp.Value;
+            }
+
+            foreach (var kvp in c.EpisodesByDate)
+            {
+                if (!DateOnly.TryParse(kvp.Key, out var d) || d < cutoff) continue;
+                result.TryGetValue(kvp.Key, out var cur);
+                result[kvp.Key] = cur + kvp.Value;
+            }
+
+            // Also include WatchDates that weren't captured in MoviesByDate/EpisodesByDate (legacy)
+            foreach (var date in c.WatchDates)
+            {
+                if (!DateOnly.TryParse(date, out var d) || d < cutoff) continue;
+                if (!result.ContainsKey(date))
+                {
+                    result[date] = 1;
+                }
+            }
+
+            return result;
+        }
+    }
+
+    public int EvaluateAllProfiles()
+    {
+        lock (_lock)
+        {
+            var count = 0;
+            foreach (var profile in _userProfiles.Values.ToList())
+            {
+                try
+                {
+                    SyncDefinitions(profile, profile.UserId);
+                    EvaluateBadges(profile, profile.UserId);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[AchievementBadges] EvaluateAll failed for user {UserId}", profile.UserId);
+                }
+            }
+            Save();
+            _logger.LogInformation("[AchievementBadges] Re-evaluated {Count} user profiles on startup.", count);
+            return count;
+        }
+    }
+
     public UserAchievementProfile? PeekProfile(string userId)
     {
         userId = NormalizeUserId(userId);

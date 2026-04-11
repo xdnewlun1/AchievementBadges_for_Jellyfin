@@ -24,4 +24,9 @@ public class UserAchievementProfile
     public string? DailyQuestDate { get; set; }
     public bool DailyQuestCompleted { get; set; }
     public int DailyQuestStartValue { get; set; }
+
+    public string? WeeklyQuestId { get; set; }
+    public string? WeeklyQuestWeek { get; set; }
+    public bool WeeklyQuestCompleted { get; set; }
+    public int WeeklyQuestStartValue { get; set; }
 }
