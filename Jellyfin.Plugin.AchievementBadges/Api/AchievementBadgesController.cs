@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Plugin.AchievementBadges.Models;
@@ -316,5 +317,106 @@ public class AchievementBadgesController : ControllerBase
     {
         var result = _backfillService.BackfillAllUsers();
         return Ok(result);
+    }
+
+    [HttpGet("admin/badge-catalog")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetBadgeCatalog()
+    {
+        var config = Plugin.Instance?.Configuration;
+        var disabled = new HashSet<string>(
+            config?.DisabledBadgeIds ?? new List<string>(),
+            StringComparer.OrdinalIgnoreCase);
+
+        var catalog = AchievementDefinitions.All
+            .GroupBy(d => d.Category)
+            .Select(g => new
+            {
+                Category = g.Key,
+                Badges = g.Select(d => new
+                {
+                    d.Id,
+                    d.Title,
+                    d.Description,
+                    d.Icon,
+                    d.Rarity,
+                    d.TargetValue,
+                    Disabled = disabled.Contains(d.Id)
+                }).ToList()
+            })
+            .ToList();
+
+        return Ok(new
+        {
+            Catalog = catalog,
+            DisabledBadgeIds = disabled.ToList()
+        });
+    }
+
+    public class BadgeToggleRequest
+    {
+        public string? BadgeId { get; set; }
+        public bool Disabled { get; set; }
+    }
+
+    public class BadgeBulkToggleRequest
+    {
+        public List<string>? DisabledBadgeIds { get; set; }
+    }
+
+    [HttpPost("admin/badge-catalog/toggle")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult ToggleBadge([FromBody] BadgeToggleRequest request)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.BadgeId))
+        {
+            return BadRequest(new { Message = "BadgeId is required." });
+        }
+
+        var plugin = Plugin.Instance;
+        if (plugin is null)
+        {
+            return BadRequest(new { Message = "Plugin instance not available." });
+        }
+
+        var config = plugin.Configuration;
+        config.DisabledBadgeIds ??= new List<string>();
+
+        var exists = config.DisabledBadgeIds
+            .Any(id => id.Equals(request.BadgeId, StringComparison.OrdinalIgnoreCase));
+
+        if (request.Disabled && !exists)
+        {
+            config.DisabledBadgeIds.Add(request.BadgeId);
+        }
+        else if (!request.Disabled && exists)
+        {
+            config.DisabledBadgeIds.RemoveAll(id =>
+                id.Equals(request.BadgeId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        plugin.UpdateConfiguration(config);
+        return Ok(new { Success = true, DisabledBadgeIds = config.DisabledBadgeIds });
+    }
+
+    [HttpPost("admin/badge-catalog/bulk")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult BulkSetDisabled([FromBody] BadgeBulkToggleRequest request)
+    {
+        var plugin = Plugin.Instance;
+        if (plugin is null)
+        {
+            return BadRequest(new { Message = "Plugin instance not available." });
+        }
+
+        var config = plugin.Configuration;
+        config.DisabledBadgeIds = (request?.DisabledBadgeIds ?? new List<string>())
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        plugin.UpdateConfiguration(config);
+        return Ok(new { Success = true, DisabledBadgeIds = config.DisabledBadgeIds });
     }
 }

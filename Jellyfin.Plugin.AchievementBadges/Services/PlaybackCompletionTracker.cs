@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Session;
@@ -123,16 +124,23 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 
             var libraryName = ResolveLibraryName(item);
 
-            var success = _playbackCompletionService.RecordCompletion(
-                userId: userId,
-                itemId: itemId,
-                isMovie: isMovie,
-                isEpisode: isEpisode,
-                isSeriesCompleted: false,
-                completionPercent: completionPercent,
-                playedAt: DateTimeOffset.Now,
-                libraryName: libraryName,
-                message: out var message);
+            var context = new PlaybackContext
+            {
+                UserId = userId,
+                ItemId = itemId,
+                IsMovie = isMovie,
+                IsEpisode = isEpisode,
+                SeriesCompleted = false,
+                LibraryName = libraryName,
+                PlayedAt = DateTimeOffset.Now,
+                ProductionYear = item.ProductionYear,
+                ProductionLocations = item.ProductionLocations,
+                OriginalLanguage = GetOriginalLanguage(item),
+                Genres = item.Genres,
+                RunTimeTicks = item.RunTimeTicks
+            };
+
+            var success = _playbackCompletionService.RecordCompletion(context, completionPercent, out var message);
 
             if (success)
             {
@@ -170,6 +178,28 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         }
 
         return Guid.Empty;
+    }
+
+    private static string? GetOriginalLanguage(BaseItem item)
+    {
+        try
+        {
+            var prop = item.GetType().GetProperty("OriginalLanguage")
+                        ?? item.GetType().GetProperty("PreferredMetadataLanguage");
+            if (prop != null)
+            {
+                var value = prop.GetValue(item) as string;
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
     }
 
     private string? ResolveLibraryName(BaseItem item)

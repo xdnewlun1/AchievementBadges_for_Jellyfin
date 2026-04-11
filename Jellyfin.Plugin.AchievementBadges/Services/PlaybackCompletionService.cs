@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.Entities;
 
 namespace Jellyfin.Plugin.AchievementBadges.Services;
 
@@ -40,7 +41,21 @@ public class PlaybackCompletionService
         out string message,
         string? libraryName = null)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        return RecordCompletion(new PlaybackContext
+        {
+            UserId = userId,
+            ItemId = itemId,
+            IsMovie = isMovie,
+            IsEpisode = isEpisode,
+            SeriesCompleted = isSeriesCompleted,
+            LibraryName = libraryName,
+            PlayedAt = playedAt
+        }, completionPercent, out message);
+    }
+
+    public bool RecordCompletion(PlaybackContext context, double completionPercent, out string message)
+    {
+        if (string.IsNullOrWhiteSpace(context.UserId))
         {
             message = "User ID is required.";
             return false;
@@ -52,20 +67,27 @@ public class PlaybackCompletionService
             return false;
         }
 
-        itemId ??= string.Empty;
+        var itemId = context.ItemId ?? string.Empty;
+        var playedAt = context.PlayedAt ?? DateTimeOffset.Now;
+        context.PlayedAt = playedAt;
+        var isRewatch = false;
 
         lock (_lock)
         {
-            var state = GetOrCreateState(userId);
+            var state = GetOrCreateState(context.UserId);
 
             CleanupOldEntries(state, playedAt);
 
             if (!string.IsNullOrWhiteSpace(itemId) &&
-                state.RecentlyCompletedItemIds.TryGetValue(itemId, out var lastSeen) &&
-                playedAt - lastSeen < TimeSpan.FromHours(6))
+                state.RecentlyCompletedItemIds.TryGetValue(itemId, out var lastSeen))
             {
-                message = "This item was already counted recently.";
-                return false;
+                if (playedAt - lastSeen < TimeSpan.FromHours(6))
+                {
+                    message = "This item was already counted recently.";
+                    return false;
+                }
+
+                isRewatch = true;
             }
 
             if (!string.IsNullOrWhiteSpace(itemId))
@@ -75,12 +97,12 @@ public class PlaybackCompletionService
 
             state.TotalCompletedItems++;
 
-            if (isMovie)
+            if (context.IsMovie)
             {
                 state.TotalCompletedMovies++;
             }
 
-            if (isEpisode)
+            if (context.IsEpisode)
             {
                 state.TotalCompletedEpisodes++;
             }
@@ -90,13 +112,8 @@ public class PlaybackCompletionService
             Save();
         }
 
-        _achievementBadgeService.RecordPlayback(
-            userId,
-            isMovie,
-            isEpisode,
-            isSeriesCompleted,
-            libraryName,
-            playedAt);
+        context.IsRewatch = isRewatch;
+        _achievementBadgeService.RecordPlayback(context);
 
         message = "Playback completion recorded.";
         return true;
@@ -132,7 +149,7 @@ public class PlaybackCompletionService
 
         foreach (var pair in state.RecentlyCompletedItemIds)
         {
-            if (now - pair.Value > TimeSpan.FromHours(24))
+            if (now - pair.Value > TimeSpan.FromDays(90))
             {
                 toRemove.Add(pair.Key);
             }

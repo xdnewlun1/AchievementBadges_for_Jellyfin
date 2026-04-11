@@ -25,6 +25,24 @@ public class UserAchievementCounters
 
     public int BestWatchStreak { get; set; }
 
+    public HashSet<int> DecadesWatched { get; set; } = new();
+    public HashSet<string> CountriesWatched { get; set; } = new();
+    public HashSet<string> LanguagesWatched { get; set; } = new();
+    public HashSet<string> GenresWatched { get; set; } = new();
+
+    public long TotalMinutesWatched { get; set; }
+    public int LongestItemMinutes { get; set; }
+    public int ShortItemsWatched { get; set; }
+
+    public bool WatchedOnChristmas { get; set; }
+    public bool WatchedOnNewYear { get; set; }
+    public bool WatchedOnHalloween { get; set; }
+
+    public int LongSeriesCompleted { get; set; }
+    public int VeryLongSeriesCompleted { get; set; }
+
+    public int RewatchCount { get; set; }
+
     public int MaxEpisodesInSingleDay
     {
         get
@@ -56,4 +74,9 @@ public class UserAchievementCounters
             return WatchDates.Count;
         }
     }
+
+    public int UniqueDecadesWatched => DecadesWatched.Count;
+    public int UniqueCountriesWatched => CountriesWatched.Count;
+    public int UniqueLanguagesWatched => LanguagesWatched.Count;
+    public int UniqueGenresWatched => GenresWatched.Count;
 }

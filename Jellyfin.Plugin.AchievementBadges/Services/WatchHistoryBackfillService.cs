@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
@@ -102,13 +103,19 @@ public class WatchHistoryBackfillService
 
                 var playedDate = GetPlayedDate(user, movie);
 
-                _achievementBadgeService.RecordPlayback(
-                    userId,
-                    isMovie: true,
-                    isEpisode: false,
-                    seriesCompleted: false,
-                    libraryName: libraryName,
-                    playedAt: playedDate);
+                _achievementBadgeService.RecordPlayback(new PlaybackContext
+                {
+                    UserId = userId,
+                    ItemId = movie.Id.ToString("D"),
+                    IsMovie = true,
+                    LibraryName = libraryName,
+                    PlayedAt = playedDate,
+                    ProductionYear = movie.ProductionYear,
+                    ProductionLocations = movie.ProductionLocations,
+                    OriginalLanguage = GetOriginalLanguage(movie),
+                    Genres = movie.Genres,
+                    RunTimeTicks = movie.RunTimeTicks
+                });
             }
 
             // Query all played episodes
@@ -137,13 +144,19 @@ public class WatchHistoryBackfillService
 
                 var playedDate = GetPlayedDate(user, episode);
 
-                _achievementBadgeService.RecordPlayback(
-                    userId,
-                    isMovie: false,
-                    isEpisode: true,
-                    seriesCompleted: false,
-                    libraryName: libraryName,
-                    playedAt: playedDate);
+                _achievementBadgeService.RecordPlayback(new PlaybackContext
+                {
+                    UserId = userId,
+                    ItemId = episode.Id.ToString("D"),
+                    IsEpisode = true,
+                    LibraryName = libraryName,
+                    PlayedAt = playedDate,
+                    ProductionYear = episode.ProductionYear,
+                    ProductionLocations = episode.ProductionLocations,
+                    OriginalLanguage = GetOriginalLanguage(episode),
+                    Genres = episode.Genres,
+                    RunTimeTicks = episode.RunTimeTicks
+                });
 
                 if (seriesId != Guid.Empty)
                 {
@@ -180,13 +193,13 @@ public class WatchHistoryBackfillService
                             .OrderByDescending(d => d)
                             .FirstOrDefault();
 
-                        _achievementBadgeService.RecordPlayback(
-                            userId,
-                            isMovie: false,
-                            isEpisode: false,
-                            seriesCompleted: true,
-                            libraryName: null,
-                            playedAt: latestDate);
+                        _achievementBadgeService.RecordPlayback(new PlaybackContext
+                        {
+                            UserId = userId,
+                            SeriesCompleted = true,
+                            CompletedSeriesEpisodeCount = totalEpisodes,
+                            PlayedAt = latestDate
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -234,6 +247,28 @@ public class WatchHistoryBackfillService
         }
 
         return string.Empty;
+    }
+
+    private static string? GetOriginalLanguage(BaseItem item)
+    {
+        try
+        {
+            var prop = item.GetType().GetProperty("OriginalLanguage")
+                        ?? item.GetType().GetProperty("PreferredMetadataLanguage");
+            if (prop != null)
+            {
+                var value = prop.GetValue(item) as string;
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
     }
 
     private static Guid GetSeriesId(BaseItem episode)

@@ -13,5 +13,18 @@ public enum AchievementMetric
     CurrentWatchStreak,
     BestWatchStreak,
     MaxEpisodesInSingleDay,
-    MaxMoviesInSingleDay
+    MaxMoviesInSingleDay,
+    UniqueDecadesWatched,
+    UniqueCountriesWatched,
+    UniqueLanguagesWatched,
+    UniqueGenresWatched,
+    TotalMinutesWatched,
+    LongestItemMinutes,
+    ShortItemsWatched,
+    WatchedOnChristmas,
+    WatchedOnNewYear,
+    WatchedOnHalloween,
+    LongSeriesCompleted,
+    VeryLongSeriesCompleted,
+    RewatchCount
 }

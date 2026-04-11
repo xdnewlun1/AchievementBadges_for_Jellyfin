@@ -65,7 +65,61 @@ public static class AchievementDefinitions
         new() { Id = "episode-marathon", Key = "episode_marathon", Title = "Episode Marathon", Description = "Watch 5 episodes in a single day.", Icon = "directions_run", Category = "Episode Marathons", Rarity = "Rare", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 5 },
         new() { Id = "season-sprint", Key = "season_sprint", Title = "Season Sprint", Description = "Watch 10 episodes in a single day.", Icon = "sports_score", Category = "Episode Marathons", Rarity = "Epic", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 10 },
 
+        new() { Id = "double-feature", Key = "double_feature", Title = "Double Feature", Description = "Watch 2 films in a single day.", Icon = "local_movies", Category = "Film Marathons", Rarity = "Common", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 2 },
         new() { Id = "cinema-day", Key = "cinema_day", Title = "Cinema Day", Description = "Watch 3 films in a single day.", Icon = "local_movies", Category = "Film Marathons", Rarity = "Rare", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 3 },
-        new() { Id = "movie-marathon", Key = "movie_marathon", Title = "Movie Marathon", Description = "Watch 5 films in a single day.", Icon = "theaters", Category = "Film Marathons", Rarity = "Epic", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 5 }
+        new() { Id = "movie-marathon", Key = "movie_marathon", Title = "Movie Marathon", Description = "Watch 5 films in a single day.", Icon = "theaters", Category = "Film Marathons", Rarity = "Epic", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 5 },
+        new() { Id = "film-festival", Key = "film_festival", Title = "Film Festival", Description = "Watch 7 films in a single day.", Icon = "festival", Category = "Film Marathons", Rarity = "Mythic", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 7 },
+
+        new() { Id = "season-devourer", Key = "season_devourer", Title = "Season Devourer", Description = "Watch 20 episodes in a single day.", Icon = "fastfood", Category = "Episode Marathons", Rarity = "Legendary", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 20 },
+        new() { Id = "all-nighter", Key = "all_nighter", Title = "All-Nighter", Description = "Watch 30 episodes in a single day.", Icon = "alarm", Category = "Episode Marathons", Rarity = "Mythic", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 30 },
+
+        new() { Id = "half-century-films", Key = "half_century_films", Title = "Half-Century", Description = "Watch 50 films.", Icon = "movie", Category = "Films", Rarity = "Rare", Metric = AchievementMetric.MoviesWatched, TargetValue = 50 },
+
+        new() { Id = "millennium", Key = "millennium", Title = "Millennium", Description = "Watch 1000 items.", Icon = "rocket_launch", Category = "Binge", Rarity = "Mythic", Metric = AchievementMetric.TotalItemsWatched, TargetValue = 1000 },
+
+        new() { Id = "three-am-club", Key = "three_am_club", Title = "3 AM Club", Description = "Have 100 late-night sessions.", Icon = "nightlight", Category = "Night Watching", Rarity = "Mythic", Metric = AchievementMetric.LateNightSessions, TargetValue = 100 },
+
+        new() { Id = "dawn-patrol", Key = "dawn_patrol", Title = "Dawn Patrol", Description = "Have 50 early-morning sessions.", Icon = "brightness_5", Category = "Morning Watching", Rarity = "Legendary", Metric = AchievementMetric.EarlyMorningSessions, TargetValue = 50 },
+
+        new() { Id = "saturday-night-fever", Key = "saturday_night_fever", Title = "Saturday Night Fever", Description = "Have 100 weekend sessions.", Icon = "local_fire_department", Category = "Weekend Watching", Rarity = "Mythic", Metric = AchievementMetric.WeekendSessions, TargetValue = 100 },
+
+        new() { Id = "momentum", Key = "momentum", Title = "Momentum", Description = "Reach a best watch streak of 3 days.", Icon = "trending_up", Category = "Best Streaks", Rarity = "Common", Metric = AchievementMetric.BestWatchStreak, TargetValue = 3 },
+        new() { Id = "fortnight", Key = "fortnight", Title = "Fortnight", Description = "Reach a best watch streak of 14 days.", Icon = "calendar_view_week", Category = "Best Streaks", Rarity = "Epic", Metric = AchievementMetric.BestWatchStreak, TargetValue = 14 },
+        new() { Id = "marathon-man", Key = "marathon_man", Title = "Marathon Man", Description = "Reach a best watch streak of 60 days.", Icon = "directions_run", Category = "Best Streaks", Rarity = "Legendary", Metric = AchievementMetric.BestWatchStreak, TargetValue = 60 },
+
+        new() { Id = "time-traveller-novice", Key = "time_traveller_novice", Title = "Time Traveller", Description = "Watch items from 3 different decades.", Icon = "schedule", Category = "Eras", Rarity = "Uncommon", Metric = AchievementMetric.UniqueDecadesWatched, TargetValue = 3 },
+        new() { Id = "time-traveller", Key = "time_traveller", Title = "Era Hopper", Description = "Watch items from 5 different decades.", Icon = "history", Category = "Eras", Rarity = "Rare", Metric = AchievementMetric.UniqueDecadesWatched, TargetValue = 5 },
+        new() { Id = "epoch-explorer", Key = "epoch_explorer", Title = "Epoch Explorer", Description = "Watch items from 8 different decades.", Icon = "hourglass_full", Category = "Eras", Rarity = "Legendary", Metric = AchievementMetric.UniqueDecadesWatched, TargetValue = 8 },
+
+        new() { Id = "globetrotter", Key = "globetrotter", Title = "Globetrotter", Description = "Watch items produced in 3 different countries.", Icon = "public", Category = "World", Rarity = "Uncommon", Metric = AchievementMetric.UniqueCountriesWatched, TargetValue = 3 },
+        new() { Id = "world-tour", Key = "world_tour", Title = "World Tour", Description = "Watch items produced in 5 different countries.", Icon = "flight_takeoff", Category = "World", Rarity = "Rare", Metric = AchievementMetric.UniqueCountriesWatched, TargetValue = 5 },
+        new() { Id = "un-delegate", Key = "un_delegate", Title = "UN Delegate", Description = "Watch items produced in 10 different countries.", Icon = "language", Category = "World", Rarity = "Epic", Metric = AchievementMetric.UniqueCountriesWatched, TargetValue = 10 },
+
+        new() { Id = "bilingual", Key = "bilingual", Title = "Bilingual", Description = "Watch items in 2 different original languages.", Icon = "translate", Category = "Languages", Rarity = "Common", Metric = AchievementMetric.UniqueLanguagesWatched, TargetValue = 2 },
+        new() { Id = "polyglot", Key = "polyglot", Title = "Polyglot", Description = "Watch items in 5 different original languages.", Icon = "record_voice_over", Category = "Languages", Rarity = "Epic", Metric = AchievementMetric.UniqueLanguagesWatched, TargetValue = 5 },
+
+        new() { Id = "genre-curious", Key = "genre_curious", Title = "Genre Curious", Description = "Watch items across 3 different genres.", Icon = "category", Category = "Genres", Rarity = "Common", Metric = AchievementMetric.UniqueGenresWatched, TargetValue = 3 },
+        new() { Id = "genre-hopper", Key = "genre_hopper", Title = "Genre Hopper", Description = "Watch items across 5 different genres.", Icon = "swap_horiz", Category = "Genres", Rarity = "Rare", Metric = AchievementMetric.UniqueGenresWatched, TargetValue = 5 },
+        new() { Id = "genre-master", Key = "genre_master", Title = "Genre Master", Description = "Watch items across 10 different genres.", Icon = "auto_awesome_motion", Category = "Genres", Rarity = "Epic", Metric = AchievementMetric.UniqueGenresWatched, TargetValue = 10 },
+
+        new() { Id = "epic-runtime", Key = "epic_runtime", Title = "Epic Runtime", Description = "Watch a single item over 3 hours long.", Icon = "timer", Category = "Runtime", Rarity = "Rare", Metric = AchievementMetric.LongestItemMinutes, TargetValue = 180 },
+        new() { Id = "saga-runtime", Key = "saga_runtime", Title = "Saga Runtime", Description = "Watch a single item over 4 hours long.", Icon = "movie_creation", Category = "Runtime", Rarity = "Legendary", Metric = AchievementMetric.LongestItemMinutes, TargetValue = 240 },
+
+        new() { Id = "short-attention-span", Key = "short_attention_span", Title = "Short Attention Span", Description = "Watch 20 items under 30 minutes each.", Icon = "bolt", Category = "Runtime", Rarity = "Uncommon", Metric = AchievementMetric.ShortItemsWatched, TargetValue = 20 },
+
+        new() { Id = "ten-hours", Key = "ten_hours", Title = "Ten Hours", Description = "Watch 10 hours of content.", Icon = "schedule", Category = "Total Time", Rarity = "Common", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 600 },
+        new() { Id = "hundred-hours", Key = "hundred_hours", Title = "Hundred Hours", Description = "Watch 100 hours of content.", Icon = "hourglass_top", Category = "Total Time", Rarity = "Rare", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 6000 },
+        new() { Id = "five-hundred-hours", Key = "five_hundred_hours", Title = "500 Hour Club", Description = "Watch 500 hours of content.", Icon = "update", Category = "Total Time", Rarity = "Epic", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 30000 },
+        new() { Id = "thousand-hours", Key = "thousand_hours", Title = "Thousand Hours", Description = "Watch 1000 hours of content.", Icon = "av_timer", Category = "Total Time", Rarity = "Legendary", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 60000 },
+
+        new() { Id = "christmas-cheer", Key = "christmas_cheer", Title = "Christmas Cheer", Description = "Watch something on Christmas Day.", Icon = "celebration", Category = "Holidays", Rarity = "Rare", Metric = AchievementMetric.WatchedOnChristmas, TargetValue = 1 },
+        new() { Id = "new-years-marathon", Key = "new_years_marathon", Title = "New Year's Marathon", Description = "Watch something on New Year's Day.", Icon = "cake", Category = "Holidays", Rarity = "Rare", Metric = AchievementMetric.WatchedOnNewYear, TargetValue = 1 },
+        new() { Id = "halloween-horror", Key = "halloween_horror", Title = "Halloween Night", Description = "Watch something on Halloween.", Icon = "whatshot", Category = "Holidays", Rarity = "Rare", Metric = AchievementMetric.WatchedOnHalloween, TargetValue = 1 },
+
+        new() { Id = "completionist-plus", Key = "completionist_plus", Title = "Completionist+", Description = "Complete a series with 50 or more episodes.", Icon = "military_tech", Category = "Series", Rarity = "Epic", Metric = AchievementMetric.LongSeriesCompleted, TargetValue = 1 },
+        new() { Id = "seen-it-all", Key = "seen_it_all", Title = "Seen It All", Description = "Complete a series with 100 or more episodes.", Icon = "workspace_premium", Category = "Series", Rarity = "Legendary", Metric = AchievementMetric.VeryLongSeriesCompleted, TargetValue = 1 },
+
+        new() { Id = "rewatcher", Key = "rewatcher", Title = "Rewatcher", Description = "Rewatch 5 items.", Icon = "replay", Category = "Rewatch", Rarity = "Uncommon", Metric = AchievementMetric.RewatchCount, TargetValue = 5 },
+        new() { Id = "serial-rewatcher", Key = "serial_rewatcher", Title = "Serial Rewatcher", Description = "Rewatch 25 items.", Icon = "repeat", Category = "Rewatch", Rarity = "Epic", Metric = AchievementMetric.RewatchCount, TargetValue = 25 }
     };
 }

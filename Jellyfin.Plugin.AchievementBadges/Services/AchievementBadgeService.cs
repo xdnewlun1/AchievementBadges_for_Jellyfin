@@ -44,6 +44,18 @@ public class AchievementBadgeService
             var profile = GetOrCreateProfile(userId);
             EvaluateBadges(profile, userId);
             Save();
+            return GetEnabledBadgeClones(profile);
+        }
+    }
+
+    public List<AchievementBadge> GetAllBadgesForUserIncludingDisabled(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            EvaluateBadges(profile, userId);
+            Save();
             return profile.Badges.Select(CloneBadge).ToList();
         }
     }
@@ -55,6 +67,11 @@ public class AchievementBadgeService
         {
             var profile = GetOrCreateProfile(userId);
             EvaluateBadges(profile, userId);
+
+            if (!IsBadgeEnabled(badgeId))
+            {
+                return null;
+            }
 
             var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
             return badge is null ? null : CloneBadge(badge);
@@ -70,6 +87,7 @@ public class AchievementBadgeService
             EvaluateBadges(profile, userId);
 
             var equipped = profile.EquippedBadgeIds
+                .Where(IsBadgeEnabled)
                 .Select(id => profile.Badges.FirstOrDefault(b => b.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
                 .Where(b => b is not null)
                 .Select(b => CloneBadge(b!))
@@ -233,12 +251,25 @@ public class AchievementBadgeService
         string? libraryName = null,
         DateTimeOffset? playedAt = null)
     {
-        userId = NormalizeUserId(userId);
+        return RecordPlayback(new PlaybackContext
+        {
+            UserId = userId,
+            IsMovie = isMovie,
+            IsEpisode = isEpisode,
+            SeriesCompleted = seriesCompleted,
+            LibraryName = libraryName,
+            PlayedAt = playedAt
+        });
+    }
+
+    public List<AchievementBadge> RecordPlayback(PlaybackContext context)
+    {
+        var userId = NormalizeUserId(context.UserId);
         lock (_lock)
         {
             var profile = GetOrCreateProfile(userId);
             var counters = profile.Counters;
-            var timestamp = playedAt ?? DateTimeOffset.Now;
+            var timestamp = context.PlayedAt ?? DateTimeOffset.Now;
             var dayKey = timestamp.ToString("yyyy-MM-dd");
             var today = DateOnly.FromDateTime(timestamp.DateTime);
 
@@ -265,12 +296,12 @@ public class AchievementBadgeService
                 counters.BestWatchStreak = currentStreak;
             }
 
-            if (!string.IsNullOrWhiteSpace(libraryName))
+            if (!string.IsNullOrWhiteSpace(context.LibraryName))
             {
-                counters.LibrariesVisited.Add(libraryName.Trim());
+                counters.LibrariesVisited.Add(context.LibraryName.Trim());
             }
 
-            if (isMovie)
+            if (context.IsMovie)
             {
                 counters.MoviesWatched++;
 
@@ -282,7 +313,7 @@ public class AchievementBadgeService
                 counters.MoviesByDate[dayKey]++;
             }
 
-            if (isEpisode)
+            if (context.IsEpisode)
             {
                 if (!counters.EpisodesByDate.ContainsKey(dayKey))
                 {
@@ -292,9 +323,87 @@ public class AchievementBadgeService
                 counters.EpisodesByDate[dayKey]++;
             }
 
-            if (seriesCompleted)
+            if (context.SeriesCompleted)
             {
                 counters.SeriesCompleted++;
+
+                if (context.CompletedSeriesEpisodeCount >= 50)
+                {
+                    counters.LongSeriesCompleted++;
+                }
+
+                if (context.CompletedSeriesEpisodeCount >= 100)
+                {
+                    counters.VeryLongSeriesCompleted++;
+                }
+            }
+
+            if (context.IsRewatch)
+            {
+                counters.RewatchCount++;
+            }
+
+            if (context.ProductionYear is int year && year > 0)
+            {
+                counters.DecadesWatched.Add(year / 10 * 10);
+            }
+
+            if (context.ProductionLocations is { Count: > 0 })
+            {
+                foreach (var loc in context.ProductionLocations)
+                {
+                    if (!string.IsNullOrWhiteSpace(loc))
+                    {
+                        counters.CountriesWatched.Add(loc.Trim());
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(context.OriginalLanguage))
+            {
+                counters.LanguagesWatched.Add(context.OriginalLanguage.Trim().ToLowerInvariant());
+            }
+
+            if (context.Genres is { Count: > 0 })
+            {
+                foreach (var genre in context.Genres)
+                {
+                    if (!string.IsNullOrWhiteSpace(genre))
+                    {
+                        counters.GenresWatched.Add(genre.Trim());
+                    }
+                }
+            }
+
+            if (context.RunTimeTicks is long ticks && ticks > 0)
+            {
+                var minutes = (int)(ticks / TimeSpan.TicksPerMinute);
+                counters.TotalMinutesWatched += minutes;
+
+                if (minutes > counters.LongestItemMinutes)
+                {
+                    counters.LongestItemMinutes = minutes;
+                }
+
+                if (minutes > 0 && minutes < 30)
+                {
+                    counters.ShortItemsWatched++;
+                }
+            }
+
+            if (timestamp.Month == 12 && timestamp.Day == 25)
+            {
+                counters.WatchedOnChristmas = true;
+            }
+
+            if (timestamp.Month == 1 && timestamp.Day == 1)
+            {
+                counters.WatchedOnNewYear = true;
+            }
+
+            if (timestamp.Month == 10 && timestamp.Day == 31)
+            {
+                counters.WatchedOnHalloween = true;
             }
 
             var hour = timestamp.Hour;
@@ -318,14 +427,14 @@ public class AchievementBadgeService
             Save();
 
             _logger.LogInformation(
-                "Recorded playback for user {UserId}. Movie={IsMovie}, Episode={IsEpisode}, SeriesCompleted={SeriesCompleted}, Library={LibraryName}",
+                "[AchievementBadges] Recorded playback user={UserId} movie={IsMovie} ep={IsEpisode} seriesDone={SeriesCompleted} library={LibraryName}",
                 userId,
-                isMovie,
-                isEpisode,
-                seriesCompleted,
-                libraryName ?? string.Empty);
+                context.IsMovie,
+                context.IsEpisode,
+                context.SeriesCompleted,
+                context.LibraryName ?? string.Empty);
 
-            return profile.Badges.Select(CloneBadge).ToList();
+            return GetEnabledBadgeClones(profile);
         }
     }
 
@@ -337,17 +446,19 @@ public class AchievementBadgeService
             var profile = GetOrCreateProfile(userId);
             EvaluateBadges(profile, userId);
 
-            var unlocked = profile.Badges.Count(b => b.Unlocked);
-            var total = profile.Badges.Count;
+            var enabledBadges = profile.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList();
+            var unlocked = enabledBadges.Count(b => b.Unlocked);
+            var total = enabledBadges.Count;
             var percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1);
-            var score = AchievementScoreHelper.GetTotalUnlockedScore(profile.Badges);
+            var score = AchievementScoreHelper.GetTotalUnlockedScore(enabledBadges);
+            var equippedCount = profile.EquippedBadgeIds.Count(IsBadgeEnabled);
 
             return new BadgeSummary
             {
                 Unlocked = unlocked,
                 Total = total,
                 Percentage = percentage,
-                EquippedCount = profile.EquippedBadgeIds.Count,
+                EquippedCount = equippedCount,
                 Score = score,
                 CurrentWatchStreak = GetCurrentWatchStreak(profile.Counters),
                 BestWatchStreak = profile.Counters.BestWatchStreak
@@ -363,10 +474,11 @@ public class AchievementBadgeService
                 .Select(profile =>
                 {
                     EvaluateBadges(profile, profile.UserId);
-                    var unlocked = profile.Badges.Count(b => b.Unlocked);
-                    var total = profile.Badges.Count;
+                    var enabled = profile.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList();
+                    var unlocked = enabled.Count(b => b.Unlocked);
+                    var total = enabled.Count;
                     var percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1);
-                    var score = AchievementScoreHelper.GetTotalUnlockedScore(profile.Badges);
+                    var score = AchievementScoreHelper.GetTotalUnlockedScore(enabled);
 
                     return new
                     {
@@ -395,14 +507,14 @@ public class AchievementBadgeService
         lock (_lock)
         {
             var totalUsers = _userProfiles.Count;
-            var totalBadgesUnlocked = _userProfiles.Values.Sum(p => p.Badges.Count(b => b.Unlocked));
+            var totalBadgesUnlocked = _userProfiles.Values.Sum(p => p.Badges.Count(b => b.Unlocked && IsBadgeEnabled(b.Id)));
             var totalItemsWatched = _userProfiles.Values.Sum(p => p.Counters.TotalItemsWatched);
             var totalMoviesWatched = _userProfiles.Values.Sum(p => p.Counters.MoviesWatched);
             var totalSeriesCompleted = _userProfiles.Values.Sum(p => p.Counters.SeriesCompleted);
-            var totalAchievementScore = _userProfiles.Values.Sum(p => AchievementScoreHelper.GetTotalUnlockedScore(p.Badges));
+            var totalAchievementScore = _userProfiles.Values.Sum(p => AchievementScoreHelper.GetTotalUnlockedScore(p.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList()));
 
             var mostCommonBadge = _userProfiles.Values
-                .SelectMany(p => p.Badges.Where(b => b.Unlocked))
+                .SelectMany(p => p.Badges.Where(b => b.Unlocked && IsBadgeEnabled(b.Id)))
                 .GroupBy(b => b.Id)
                 .OrderByDescending(g => g.Count())
                 .Select(g => g.First().Title)
@@ -576,7 +688,7 @@ public class AchievementBadgeService
     private static void SanitizeEquippedBadges(UserAchievementProfile profile)
     {
         var unlockedIds = profile.Badges
-            .Where(b => b.Unlocked)
+            .Where(b => b.Unlocked && IsBadgeEnabled(b.Id))
             .Select(b => b.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -629,8 +741,40 @@ public class AchievementBadgeService
             AchievementMetric.BestWatchStreak => counters.BestWatchStreak,
             AchievementMetric.MaxEpisodesInSingleDay => counters.MaxEpisodesInSingleDay,
             AchievementMetric.MaxMoviesInSingleDay => counters.MaxMoviesInSingleDay,
+            AchievementMetric.UniqueDecadesWatched => counters.UniqueDecadesWatched,
+            AchievementMetric.UniqueCountriesWatched => counters.UniqueCountriesWatched,
+            AchievementMetric.UniqueLanguagesWatched => counters.UniqueLanguagesWatched,
+            AchievementMetric.UniqueGenresWatched => counters.UniqueGenresWatched,
+            AchievementMetric.TotalMinutesWatched => counters.TotalMinutesWatched > int.MaxValue ? int.MaxValue : (int)counters.TotalMinutesWatched,
+            AchievementMetric.LongestItemMinutes => counters.LongestItemMinutes,
+            AchievementMetric.ShortItemsWatched => counters.ShortItemsWatched,
+            AchievementMetric.WatchedOnChristmas => counters.WatchedOnChristmas ? 1 : 0,
+            AchievementMetric.WatchedOnNewYear => counters.WatchedOnNewYear ? 1 : 0,
+            AchievementMetric.WatchedOnHalloween => counters.WatchedOnHalloween ? 1 : 0,
+            AchievementMetric.LongSeriesCompleted => counters.LongSeriesCompleted,
+            AchievementMetric.VeryLongSeriesCompleted => counters.VeryLongSeriesCompleted,
+            AchievementMetric.RewatchCount => counters.RewatchCount,
             _ => 0
         };
+    }
+
+    private static bool IsBadgeEnabled(string badgeId)
+    {
+        var config = Plugin.Instance?.Configuration;
+        if (config?.DisabledBadgeIds is null || config.DisabledBadgeIds.Count == 0)
+        {
+            return true;
+        }
+
+        return !config.DisabledBadgeIds.Contains(badgeId, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private List<AchievementBadge> GetEnabledBadgeClones(UserAchievementProfile profile)
+    {
+        return profile.Badges
+            .Where(b => IsBadgeEnabled(b.Id))
+            .Select(CloneBadge)
+            .ToList();
     }
 
     private static int GetCurrentWatchStreak(UserAchievementCounters counters)

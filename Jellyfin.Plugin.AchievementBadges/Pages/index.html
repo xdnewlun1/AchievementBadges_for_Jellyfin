@@ -385,6 +385,26 @@ padding:1em;
                     </div>
                 </details>
 
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Enable / disable badges (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">
+                            Disabled badges are hidden from user pages, don't count toward the completion percentage,
+                            and are auto-unequipped from users who had them equipped. Useful if your server doesn't
+                            have enough libraries or long series to ever satisfy a badge.
+                        </p>
+                        <div class="raisedButtonContainer" style="margin-bottom:0.75em;">
+                            <button is="emby-button" type="button" class="raised" id="abCatalogReloadBtn">Reload catalog</button>
+                            <button is="emby-button" type="button" class="raised" id="abCatalogEnableAllBtn">Enable all</button>
+                            <button is="emby-button" type="button" class="raised" id="abCatalogDisableAllBtn">Disable all</button>
+                        </div>
+                        <div id="abCatalogStatus" class="secondaryText"></div>
+                        <div id="abCatalog"></div>
+                    </div>
+                </details>
+
                 <div id="abStatus" class="secondaryText"></div>
 
                 <div id="abError"></div>
@@ -518,17 +538,23 @@ padding:1em;
         return headers;
     }
 
-    function fetchJson(path, method) {
+    function fetchJson(path, method, body) {
         var url = buildUrl(path);
         var httpMethod = method || 'GET';
         var headers = getAuthHeaders();
         headers['Content-Type'] = 'application/json';
 
-        return fetch(url, {
+        var init = {
             method: httpMethod,
             headers: headers,
             credentials: 'include'
-        }).then(function (response) {
+        };
+
+        if (body !== undefined && body !== null) {
+            init.body = JSON.stringify(body);
+        }
+
+        return fetch(url, init).then(function (response) {
             if (!response.ok) {
                 return response.text().then(function (text) {
                     var msg = 'Request failed: ' + response.status;
@@ -981,7 +1007,146 @@ padding:1em;
         });
     });
 
+    // --- Admin: badge catalog enable/disable -----------------------------
+    var catalogContainer = document.getElementById('abCatalog');
+    var catalogStatus = document.getElementById('abCatalogStatus');
+    var catalogReloadBtn = document.getElementById('abCatalogReloadBtn');
+    var catalogEnableAllBtn = document.getElementById('abCatalogEnableAllBtn');
+    var catalogDisableAllBtn = document.getElementById('abCatalogDisableAllBtn');
+
+    function setCatalogStatus(msg) {
+        catalogStatus.textContent = msg || '';
+    }
+
+    function rarityColor(rarity) {
+        var r = (rarity || '').toLowerCase();
+        if (r === 'common') return '#9aa5b1';
+        if (r === 'uncommon') return '#4caf50';
+        if (r === 'rare') return '#2196f3';
+        if (r === 'epic') return '#9c27b0';
+        if (r === 'legendary') return '#ff9800';
+        if (r === 'mythic') return '#f44336';
+        return '#9aa5b1';
+    }
+
+    function renderCatalog(catalog) {
+        catalogContainer.innerHTML = '';
+        if (!catalog || !catalog.length) {
+            catalogContainer.innerHTML = '<div class="secondaryText">No badges defined.</div>';
+            return;
+        }
+
+        catalog.forEach(function (group) {
+            var section = document.createElement('div');
+            section.className = 'abCatalogGroup';
+            section.style.marginBottom = '1.5em';
+
+            var heading = document.createElement('h4');
+            heading.textContent = group.Category;
+            heading.style.margin = '0.5em 0';
+            section.appendChild(heading);
+
+            var list = document.createElement('div');
+            list.style.display = 'grid';
+            list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+            list.style.gap = '0.5em';
+
+            (group.Badges || []).forEach(function (badge) {
+                var row = document.createElement('label');
+                row.style.display = 'flex';
+                row.style.alignItems = 'flex-start';
+                row.style.padding = '0.5em 0.75em';
+                row.style.border = '1px solid rgba(255,255,255,0.12)';
+                row.style.borderRadius = '4px';
+                row.style.cursor = 'pointer';
+                row.style.background = 'rgba(255,255,255,0.03)';
+
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = !badge.Disabled;
+                cb.dataset.badgeId = badge.Id;
+                cb.style.marginRight = '0.75em';
+                cb.style.marginTop = '0.25em';
+
+                var info = document.createElement('div');
+                info.style.flex = '1';
+
+                var title = document.createElement('div');
+                title.style.fontWeight = '600';
+                title.innerHTML = badge.Title + ' <span style="color:' + rarityColor(badge.Rarity) + '; font-size:0.8em; font-weight:400;">' + (badge.Rarity || '') + '</span>';
+
+                var desc = document.createElement('div');
+                desc.className = 'secondaryText';
+                desc.style.fontSize = '0.85em';
+                desc.textContent = badge.Description;
+
+                info.appendChild(title);
+                info.appendChild(desc);
+
+                row.appendChild(cb);
+                row.appendChild(info);
+
+                cb.addEventListener('change', function () {
+                    toggleBadge(badge.Id, !cb.checked, cb);
+                });
+
+                list.appendChild(row);
+            });
+
+            section.appendChild(list);
+            catalogContainer.appendChild(section);
+        });
+    }
+
+    function loadCatalog() {
+        setCatalogStatus('Loading catalog...');
+        fetchJson('Plugins/AchievementBadges/admin/badge-catalog').then(function (res) {
+            setCatalogStatus('');
+            renderCatalog((res && res.Catalog) || []);
+        }).catch(function (err) {
+            setCatalogStatus('Failed to load catalog: ' + (err && err.message ? err.message : String(err)));
+        });
+    }
+
+    function toggleBadge(badgeId, disabled, checkbox) {
+        setCatalogStatus(disabled ? ('Disabling ' + badgeId + '...') : ('Enabling ' + badgeId + '...'));
+        fetchJson('Plugins/AchievementBadges/admin/badge-catalog/toggle', 'POST', { BadgeId: badgeId, Disabled: disabled }).then(function () {
+            setCatalogStatus(disabled ? 'Badge disabled.' : 'Badge enabled.');
+            reloadAll();
+        }).catch(function (err) {
+            // revert UI
+            if (checkbox) { checkbox.checked = !disabled; }
+            setCatalogStatus('Toggle failed: ' + (err && err.message ? err.message : String(err)));
+        });
+    }
+
+    function bulkSet(disabledIds) {
+        setCatalogStatus('Saving...');
+        fetchJson('Plugins/AchievementBadges/admin/badge-catalog/bulk', 'POST', { DisabledBadgeIds: disabledIds }).then(function () {
+            setCatalogStatus('Saved.');
+            loadCatalog();
+            reloadAll();
+        }).catch(function (err) {
+            setCatalogStatus('Bulk update failed: ' + (err && err.message ? err.message : String(err)));
+        });
+    }
+
+    catalogReloadBtn.addEventListener('click', loadCatalog);
+    catalogEnableAllBtn.addEventListener('click', function () {
+        bulkSet([]);
+    });
+    catalogDisableAllBtn.addEventListener('click', function () {
+        fetchJson('Plugins/AchievementBadges/admin/badge-catalog').then(function (res) {
+            var all = [];
+            (res.Catalog || []).forEach(function (g) {
+                (g.Badges || []).forEach(function (b) { all.push(b.Id); });
+            });
+            bulkSet(all);
+        });
+    });
+
     initialisePage();
+    loadCatalog();
 })();
 </script>
 
