@@ -406,6 +406,11 @@ public class AchievementBadgeService
                 counters.WatchedOnHalloween = true;
             }
 
+            if (IsEidWindow(timestamp))
+            {
+                counters.WatchedOnEid = true;
+            }
+
             var hour = timestamp.Hour;
 
             if (hour >= 23 || hour < 5)
@@ -751,11 +756,64 @@ public class AchievementBadgeService
             AchievementMetric.WatchedOnChristmas => counters.WatchedOnChristmas ? 1 : 0,
             AchievementMetric.WatchedOnNewYear => counters.WatchedOnNewYear ? 1 : 0,
             AchievementMetric.WatchedOnHalloween => counters.WatchedOnHalloween ? 1 : 0,
+            AchievementMetric.WatchedOnEid => counters.WatchedOnEid ? 1 : 0,
             AchievementMetric.LongSeriesCompleted => counters.LongSeriesCompleted,
             AchievementMetric.VeryLongSeriesCompleted => counters.VeryLongSeriesCompleted,
             AchievementMetric.RewatchCount => counters.RewatchCount,
             _ => 0
         };
+    }
+
+    // Approximate Saudi-calendar Eid al-Fitr and Eid al-Adha start dates.
+    // Real dates depend on moon sighting and shift ±1 day regionally; the
+    // window below expands each anchor by -1/+2 days so the full
+    // celebration period and sighting variance are covered.
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2024 = { (4, 10), (6, 16) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2025 = { (3, 30), (6, 6) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2026 = { (3, 20), (5, 27) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2027 = { (3, 9), (5, 17) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2028 = { (2, 26), (5, 5) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2029 = { (2, 14), (4, 24) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2030 = { (2, 4), (4, 13) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2031 = { (1, 24), (4, 2) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2032 = { (1, 14), (3, 22) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2033 = { (1, 2), (3, 11), (12, 23) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2034 = { (12, 12), (2, 28) };
+    private static readonly (int Month, int Day)[] _eidAnchorsByYear2035 = { (12, 2), (2, 18) };
+
+    private static (int Month, int Day)[] GetEidAnchors(int year)
+    {
+        return year switch
+        {
+            2024 => _eidAnchorsByYear2024,
+            2025 => _eidAnchorsByYear2025,
+            2026 => _eidAnchorsByYear2026,
+            2027 => _eidAnchorsByYear2027,
+            2028 => _eidAnchorsByYear2028,
+            2029 => _eidAnchorsByYear2029,
+            2030 => _eidAnchorsByYear2030,
+            2031 => _eidAnchorsByYear2031,
+            2032 => _eidAnchorsByYear2032,
+            2033 => _eidAnchorsByYear2033,
+            2034 => _eidAnchorsByYear2034,
+            2035 => _eidAnchorsByYear2035,
+            _ => Array.Empty<(int, int)>()
+        };
+    }
+
+    private static bool IsEidWindow(DateTimeOffset timestamp)
+    {
+        var date = timestamp.Date;
+        foreach (var anchor in GetEidAnchors(date.Year))
+        {
+            var anchorDate = new DateTime(date.Year, anchor.Month, anchor.Day);
+            var diff = (date - anchorDate).TotalDays;
+            if (diff >= -1 && diff <= 3)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static bool IsBadgeEnabled(string badgeId)

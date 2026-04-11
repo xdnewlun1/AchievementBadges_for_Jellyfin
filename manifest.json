@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.4.10",
+        "changelog": "Add Eid Mubarak badge - unlocks on watches during Eid al-Fitr or Eid al-Adha. Dates hardcoded for 2024-2035 with a 5-day window around each anchor to cover the multi-day celebration and regional moon-sighting variance.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.10/Jellyfin.Plugin.AchievementBadgesv1.4.10.zip",
+        "checksum": "BA08512C65BB9067EEBB5717888CAE7A"
+      },
+      {
         "version": "1.4.9",
         "changelog": "Massive badge expansion: 40+ new achievements across Film Festival, Season Devourer, Millennium, 3 AM Club, Momentum/Fortnight/Marathon Man (best-streak tiers), Time Traveller (decades), Globetrotter/World Tour (countries), Polyglot (languages), Genre Hopper, Epic Runtime, Ten/Hundred/500/Thousand Hour clubs, Christmas Cheer, New Year's Marathon, Halloween Night, Completionist+ (50+ ep series), Seen It All (100+ ep series), and Rewatcher tiers. Added admin badge enable/disable panel in plugin settings - disabled badges are hidden from user pages, excluded from completion %, leaderboard, server stats, and auto-unequipped. Live playback and backfill now capture production year, countries, language, genres, and runtime from items.",
         "targetAbi": "10.11.0.0",

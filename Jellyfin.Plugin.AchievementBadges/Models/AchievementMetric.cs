@@ -24,6 +24,7 @@ public enum AchievementMetric
     WatchedOnChristmas,
     WatchedOnNewYear,
     WatchedOnHalloween,
+    WatchedOnEid,
     LongSeriesCompleted,
     VeryLongSeriesCompleted,
     RewatchCount

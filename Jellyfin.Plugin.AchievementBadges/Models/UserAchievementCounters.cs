@@ -37,6 +37,7 @@ public class UserAchievementCounters
     public bool WatchedOnChristmas { get; set; }
     public bool WatchedOnNewYear { get; set; }
     public bool WatchedOnHalloween { get; set; }
+    public bool WatchedOnEid { get; set; }
 
     public int LongSeriesCompleted { get; set; }
     public int VeryLongSeriesCompleted { get; set; }
