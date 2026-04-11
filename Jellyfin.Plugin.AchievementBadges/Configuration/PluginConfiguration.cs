@@ -29,7 +29,7 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool EnableUnlockToasts { get; set; } = true;
 
-    public bool EnableHomeWidget { get; set; } = true;
+    public bool EnableHomeWidget { get; set; } = false;
 
     public bool EnableItemDetailRibbon { get; set; } = false;
 }

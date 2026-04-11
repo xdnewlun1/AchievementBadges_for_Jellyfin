@@ -74,26 +74,61 @@
         var color = rarityColor[(badge.Rarity || '').toLowerCase()] || '#9aa5b1';
         var toast = document.createElement('div');
         toast.style.cssText =
-            'pointer-events:auto;min-width:280px;max-width:360px;padding:14px 16px;border-radius:10px;' +
-            'background:linear-gradient(135deg,rgba(30,35,50,0.96),rgba(15,18,28,0.96));' +
-            'border:1px solid ' + color + ';color:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.5);' +
-            'font-family:system-ui,sans-serif;animation:abSlideIn 0.35s ease-out;';
+            'pointer-events:auto;min-width:320px;max-width:400px;padding:16px 18px;border-radius:12px;' +
+            'background:linear-gradient(135deg,rgba(30,35,50,0.97),rgba(15,18,28,0.97));' +
+            'border:1px solid ' + color + ';color:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.6),0 0 40px ' + color + '33;' +
+            'font-family:system-ui,sans-serif;animation:abSlideIn 0.4s cubic-bezier(.22,.61,.36,1);';
         toast.innerHTML =
-            '<div style="display:flex;align-items:center;gap:10px;">' +
-                '<div style="width:36px;height:36px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:18px;">🏆</div>' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+                '<div style="width:42px;height:42px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px ' + color + '66;">🏆</div>' +
                 '<div style="flex:1;min-width:0;">' +
-                    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:0.7;">Achievement unlocked</div>' +
-                    '<div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escape(badge.Title || '') + '</div>' +
-                    '<div style="font-size:11px;color:' + color + ';font-weight:600;">' + (badge.Rarity || '') + '</div>' +
+                    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.7;font-weight:700;">Achievement unlocked</div>' +
+                    '<div style="font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + escape(badge.Title || '') + '</div>' +
+                    '<div style="font-size:11px;color:' + color + ';font-weight:700;letter-spacing:1px;text-transform:uppercase;">' + (badge.Rarity || '') + '</div>' +
                 '</div>' +
             '</div>';
         c.appendChild(toast);
+        fireConfetti(color);
         setTimeout(function () {
             toast.style.transition = 'opacity 0.4s, transform 0.4s';
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(20px)';
+            toast.style.transform = 'translateX(30px)';
             setTimeout(function () { toast.remove(); }, 450);
-        }, 6000);
+        }, 6500);
+    }
+
+    function fireConfetti(accentColor) {
+        try {
+            var container = document.createElement('div');
+            container.style.cssText = 'position:fixed;pointer-events:none;top:20px;right:20px;z-index:100000;width:400px;height:200px;overflow:visible;';
+            document.body.appendChild(container);
+
+            var colors = ['#ffd700', '#ff6b35', '#e91e63', '#9c27b0', '#2196f3', '#4caf50', accentColor];
+            for (var i = 0; i < 28; i++) {
+                var p = document.createElement('div');
+                var angle = Math.random() * 360;
+                var distance = 60 + Math.random() * 120;
+                var dx = Math.cos(angle * Math.PI / 180) * distance;
+                var dy = Math.sin(angle * Math.PI / 180) * distance;
+                var size = 6 + Math.random() * 6;
+                var color = colors[i % colors.length];
+                var rot = Math.random() * 360;
+                p.style.cssText = 'position:absolute;top:20px;right:20px;width:' + size + 'px;height:' + size + 'px;' +
+                    'background:' + color + ';border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';' +
+                    'transform:translate(0,0) rotate(0deg);opacity:1;' +
+                    'transition:transform 0.9s cubic-bezier(.22,.61,.36,1),opacity 0.9s;';
+                container.appendChild(p);
+                (function (el, dx, dy, rot) {
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg)';
+                            el.style.opacity = '0';
+                        });
+                    });
+                })(p, dx, dy, rot);
+            }
+            setTimeout(function () { container.remove(); }, 1200);
+        } catch (e) {}
     }
 
     function escape(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
@@ -127,55 +162,10 @@
             .catch(function () { });
     }
 
-    // ---------- Home widget -----------------------------------------
-
-    function injectHomeWidget() {
-        if (!features.EnableHomeWidget) return;
-        if (document.getElementById(HOME_ID)) return;
-        if (!/#!?\/home/.test(window.location.hash) && !/#!?\/?/.test(window.location.hash)) return;
-
-        var homeSections = document.querySelector('.homeSectionsContainer') || document.querySelector('.pageTabContent .section0') || document.querySelector('.homePage');
-        if (!homeSections) return;
-
-        var uid = getUserId(); if (!uid) return;
-
-        var widget = document.createElement('div');
-        widget.id = HOME_ID;
-        widget.className = 'homePage';
-        widget.style.cssText = 'margin:1em 0;padding:1.25em;border-radius:12px;background:linear-gradient(135deg,rgba(30,35,50,0.8),rgba(15,18,28,0.8));border:1px solid rgba(255,255,255,0.08);';
-        widget.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1em;"><div><div style="font-size:0.75em;text-transform:uppercase;letter-spacing:1px;opacity:0.6;">Your achievements</div><div id="ab-home-title" style="font-size:1.3em;font-weight:700;margin-top:0.25em;">Loading...</div><div id="ab-home-sub" style="font-size:0.85em;opacity:0.75;margin-top:0.25em;"></div></div><a href="#!/achievements" style="padding:0.5em 1em;border-radius:999px;background:rgba(255,255,255,0.1);color:#fff;text-decoration:none;font-size:0.85em;font-weight:600;">View all →</a></div><div id="ab-home-next" style="margin-top:1em;display:flex;gap:0.5em;flex-wrap:wrap;"></div>';
-        homeSections.insertBefore(widget, homeSections.firstChild);
-
-        Promise.all([
-            fetchJson('Plugins/AchievementBadges/users/' + uid + '/rank'),
-            fetchJson('Plugins/AchievementBadges/users/' + uid + '/next-badges?limit=3')
-        ]).then(function (r) {
-            var rank = r[0], next = r[1];
-            var title = document.getElementById('ab-home-title');
-            var sub = document.getElementById('ab-home-sub');
-            var list = document.getElementById('ab-home-next');
-            if (title && rank && rank.Tier) {
-                title.textContent = rank.Tier.Name + ' · ' + rank.Score + ' pts';
-                title.style.color = rank.Tier.Color || '#fff';
-            }
-            if (sub && rank && rank.NextTier) {
-                sub.textContent = (rank.NextTier.MinScore - rank.Score) + ' points to ' + rank.NextTier.Name;
-            } else if (sub) {
-                sub.textContent = 'Max rank reached!';
-            }
-            if (list && next && next.length) {
-                list.innerHTML = next.map(function (b) {
-                    var pct = b.TargetValue > 0 ? Math.round(100 * b.CurrentValue / b.TargetValue) : 0;
-                    return '<div style="flex:1;min-width:200px;padding:0.75em;border-radius:8px;background:rgba(255,255,255,0.05);">' +
-                        '<div style="font-weight:600;font-size:0.9em;">' + escape(b.Title) + '</div>' +
-                        '<div style="font-size:0.75em;opacity:0.7;margin:0.25em 0;">' + escape(b.Description) + '</div>' +
-                        '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:#667eea;"></div></div>' +
-                        '<div style="font-size:0.7em;opacity:0.6;margin-top:0.25em;">' + b.CurrentValue + ' / ' + b.TargetValue + '</div>' +
-                    '</div>';
-                }).join('');
-            }
-        }).catch(function () { });
-    }
+    // Home widget removed in v1.5.5 - it was unreliable (flashed then got
+    // clobbered by other home-page plugins rebuilding the DOM). Users can
+    // get the same info on the standalone achievements page.
+    function injectHomeWidget() { /* no-op */ }
 
     // ---------- Item detail ribbon ----------------------------------
 

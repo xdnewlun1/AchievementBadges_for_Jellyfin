@@ -5,57 +5,275 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Achievement Profile Card</title>
 <style>
-  body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0d1017; color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:2em; }
-  .card { width:720px; max-width:100%; border-radius:16px; padding:2em; background:linear-gradient(135deg, #1a1f2e 0%, #0d1017 100%); border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-  .header { display:flex; align-items:center; gap:1em; margin-bottom:1.5em; }
-  .avatar { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.5em; }
-  .name { font-size:1.5em; font-weight:600; }
-  .tier { font-size:0.85em; opacity:0.7; text-transform:uppercase; letter-spacing:1px; }
-  .score-row { display:flex; justify-content:space-between; margin-bottom:1em; flex-wrap:wrap; gap:1em; }
-  .score-big { font-size:3em; font-weight:700; line-height:1; }
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1em; margin:1.5em 0; }
-  .stat { background:rgba(255,255,255,0.05); border-radius:8px; padding:1em; text-align:center; }
-  .stat-value { font-size:1.8em; font-weight:600; }
-  .stat-label { font-size:0.75em; opacity:0.6; text-transform:uppercase; margin-top:0.25em; }
-  .showcase { display:flex; flex-wrap:wrap; gap:0.5em; margin-top:1em; }
-  .badge-chip { padding:0.5em 0.85em; border-radius:999px; background:rgba(255,255,255,0.08); font-size:0.85em; border:1px solid rgba(255,255,255,0.12); }
-  .footer { margin-top:1.5em; font-size:0.75em; opacity:0.5; text-align:center; }
-  .progress-bar { height:8px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; margin:0.5em 0; }
-  .progress-fill { height:100%; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #1a1033 0%, #0a0814 55%, #050409 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2em 1em;
+  }
+  .card {
+    width: 820px;
+    max-width: 100%;
+    position: relative;
+    border-radius: 24px;
+    padding: 2.5em 2.5em 2em;
+    background:
+      radial-gradient(circle at top right, {{tierColor}}22 0%, transparent 55%),
+      linear-gradient(145deg, rgba(40,30,80,0.55), rgba(12,10,25,0.95));
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,0.8),
+      0 0 0 1px rgba(255,255,255,0.03) inset,
+      0 0 80px -30px {{tierColor}};
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, {{tierColor}}30 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .card::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, {{tierColor}}, transparent);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 1.25em;
+    margin-bottom: 2em;
+    position: relative;
+  }
+  .avatar-ring {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    padding: 3px;
+    background: conic-gradient(from 180deg, {{tierColor}}, #7b2cbf, {{tierColor}});
+    animation: spin 12s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1c1535, #0a0814);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.6em;
+  }
+  .name-block { flex: 1; }
+  .label {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    opacity: 0.55;
+    font-weight: 600;
+  }
+  .name {
+    font-size: 1.7em;
+    font-weight: 800;
+    margin-top: 0.15em;
+    letter-spacing: -0.5px;
+  }
+  .tier-pill {
+    display: inline-block;
+    padding: 0.3em 0.9em;
+    border-radius: 999px;
+    background: {{tierColor}}25;
+    color: {{tierColor}};
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 0.4em;
+    border: 1px solid {{tierColor}}50;
+  }
+  .score-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 1.25em;
+    gap: 1em;
+    flex-wrap: wrap;
+  }
+  .score-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+  }
+  .score-big {
+    font-size: 4.2em;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 0%, {{tierColor}} 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -2px;
+  }
+  .score-label {
+    font-size: 0.9em;
+    opacity: 0.7;
+    font-weight: 500;
+  }
+  .completion {
+    text-align: right;
+  }
+  .completion-num {
+    font-size: 1.8em;
+    font-weight: 800;
+  }
+  .progress-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    margin-bottom: 0.5em;
+  }
+  .progress-fill {
+    height: 100%;
+    width: {{progressToNext}}%;
+    background: linear-gradient(90deg, {{tierColor}}, #fff);
+    border-radius: 999px;
+    box-shadow: 0 0 12px {{tierColor}};
+    transition: width 0.6s;
+  }
+  .next-tier { text-align: right; font-size: 0.8em; opacity: 0.65; margin-bottom: 1.5em; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75em;
+    margin-bottom: 1.5em;
+  }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 1em 0.75em;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .stat:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+  .stat-value {
+    font-size: 1.9em;
+    font-weight: 800;
+    color: {{tierColor}};
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.68em;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.55;
+    margin-top: 0.5em;
+    font-weight: 600;
+  }
+  .showcase-heading {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.55;
+    font-weight: 600;
+    margin-bottom: 0.75em;
+  }
+  .showcase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+  .badge-chip {
+    padding: 0.6em 1em;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.82em;
+    font-weight: 600;
+  }
+  .empty {
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+    font-size: 0.88em;
+  }
+  .footer {
+    margin-top: 2em;
+    padding-top: 1.5em;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.7em;
+    opacity: 0.4;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
 </style>
 </head>
 <body>
   <div class="card">
     <div class="header">
-      <div class="avatar" style="background:linear-gradient(135deg, {{tierColor}} 0%, rgba(255,255,255,0.1) 100%);">🏆</div>
-      <div>
-        <div class="name">Achievement Profile</div>
-        <div class="tier" style="color:{{tierColor}};">{{tierName}}</div>
+      <div class="avatar-ring">
+        <div class="avatar">🏆</div>
+      </div>
+      <div class="name-block">
+        <div class="label">Achievement Profile</div>
+        <div class="name">Jellyfin Hunter</div>
+        <div class="tier-pill">{{tierName}}</div>
       </div>
     </div>
-    <div class="score-row">
-      <div>
+
+    <div class="score-hero">
+      <div class="score-main">
         <div class="score-big">{{score}}</div>
-        <div class="tier">Achievement score</div>
+        <div class="score-label">ACHIEVEMENT SCORE</div>
       </div>
-      <div style="text-align:right;">
-        <div style="font-size:1.5em; font-weight:600;">{{unlocked}} / {{total}}</div>
-        <div class="tier">{{percentage}}% complete</div>
+      <div class="completion">
+        <div class="completion-num">{{unlocked}} / {{total}}</div>
+        <div class="score-label">{{percentage}}% COMPLETE</div>
       </div>
     </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:{{progressToNext}}%; background:{{tierColor}};"></div></div>
-    <div class="tier" style="text-align:right; margin-bottom:1em;">{{nextTierLabel}}</div>
+
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <div class="next-tier">{{nextTierLabel}}</div>
+
     <div class="stats">
-      <div class="stat"><div class="stat-value">{{bestStreak}}</div><div class="stat-label">Best Streak</div></div>
-      <div class="stat"><div class="stat-value">{{recapMovies}}</div><div class="stat-label">Movies (30d)</div></div>
-      <div class="stat"><div class="stat-value">{{recapEpisodes}}</div><div class="stat-label">Episodes (30d)</div></div>
-      <div class="stat"><div class="stat-value">{{recapUnlocks}}</div><div class="stat-label">Unlocks (30d)</div></div>
+      <div class="stat">
+        <div class="stat-value">{{bestStreak}}</div>
+        <div class="stat-label">Best Streak</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{recapMovies}}</div>
+        <div class="stat-label">Movies / 30d</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{recapEpisodes}}</div>
+        <div class="stat-label">Episodes / 30d</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{recapUnlocks}}</div>
+        <div class="stat-label">Unlocks / 30d</div>
+      </div>
     </div>
-    <div>
-      <div style="font-size:0.85em; opacity:0.7; margin-bottom:0.5em;">Equipped showcase</div>
-      <div class="showcase">{{equippedHtml}}</div>
-    </div>
-    <div class="footer">Jellyfin Achievement Badges · Right-click → Save or screenshot to share</div>
+
+    <div class="showcase-heading">Equipped Showcase</div>
+    <div class="showcase">{{equippedHtml}}</div>
+
+    <div class="footer">Jellyfin Achievement Badges · Screenshot or save to share</div>
   </div>
 </body>
 </html>

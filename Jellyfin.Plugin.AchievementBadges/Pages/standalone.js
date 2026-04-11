@@ -93,13 +93,58 @@
             '#' + ROOT_ID + ' .ab-select{background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 16 16%22><path fill=%22%23fff%22 d=%22M4 6l4 4 4-4z%22/></svg>\');background-repeat:no-repeat;background-position:right 0.7em center;padding-right:2em;}' +
             '#' + ROOT_ID + ' .ab-select option{background:#181b24;color:#fff;}' +
             '#' + ROOT_ID + ' .ab-input:focus,#' + ROOT_ID + ' .ab-select:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.25);}' +
-            '#' + ROOT_ID + ' .ab-badge-pts{font-size:0.72em;font-weight:700;padding:0.25em 0.55em;border-radius:999px;background:linear-gradient(135deg,rgba(102,126,234,0.25),rgba(118,75,162,0.25));border:1px solid rgba(102,126,234,0.35);color:#c7d2ff;white-space:nowrap;}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn{position:relative;padding:0.9em 2em;border-radius:12px;border:2px solid #ffd700;background:linear-gradient(135deg,#6b00ff 0%,#9c27b0 35%,#e91e63 70%,#ff6b35 100%);color:#fff;font-weight:800;font-size:1em;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 30px rgba(255,215,0,0.3),0 0 60px rgba(233,30,99,0.2);transition:transform 0.15s,box-shadow 0.3s;overflow:hidden;}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.4) 50%,transparent 70%);transform:translateX(-100%);transition:transform 0.6s;}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn:hover{transform:translateY(-2px);box-shadow:0 6px 40px rgba(255,215,0,0.5),0 0 80px rgba(233,30,99,0.4);}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn:hover::before{transform:translateX(100%);}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn:disabled{opacity:0.55;cursor:not-allowed;background:linear-gradient(135deg,#333,#555);border-color:rgba(255,215,0,0.2);box-shadow:none;}' +
-            '#' + ROOT_ID + ' .ab-prestige-btn:disabled:hover{transform:none;}' +
+            '#' + ROOT_ID + ' .ab-badge-pts{font-size:0.88em;font-weight:800;padding:0.35em 0.75em;border-radius:999px;background:linear-gradient(135deg,rgba(102,126,234,0.3),rgba(118,75,162,0.3));border:1px solid rgba(102,126,234,0.45);color:#d8e0ff;white-space:nowrap;letter-spacing:0.02em;box-shadow:0 0 12px rgba(102,126,234,0.15);}' +
+            // Leaderboard podium
+            '#' + ROOT_ID + ' .ab-lb-podium{display:flex;justify-content:center;align-items:flex-end;gap:0.75em;padding:1.5em 0.5em 0.5em;}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-col{flex:1;max-width:170px;display:flex;flex-direction:column;align-items:center;gap:0.4em;}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-medal{font-size:2em;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-name{font-weight:700;font-size:0.95em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-val{font-size:0.82em;font-weight:700;opacity:0.9;}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-bar{width:100%;border-radius:8px 8px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:0.5em;font-size:0.75em;font-weight:800;letter-spacing:0.1em;color:rgba(0,0,0,0.55);text-transform:uppercase;box-shadow:0 -4px 12px rgba(0,0,0,0.3) inset;}' +
+            '#' + ROOT_ID + ' .ab-lb-podium-empty{width:100%;}' +
+            // Leaderboard rows 4-10
+            '#' + ROOT_ID + ' .ab-lb-row-new{display:flex;align-items:center;gap:0.85em;padding:0.6em 0.85em;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);margin-bottom:0.4em;}' +
+            '#' + ROOT_ID + ' .ab-lb-rank{font-weight:800;color:#9fb3c8;width:2.2em;font-size:0.9em;}' +
+            '#' + ROOT_ID + ' .ab-lb-info{flex:1;min-width:0;}' +
+            '#' + ROOT_ID + ' .ab-lb-name{font-weight:600;font-size:0.95em;margin-bottom:0.3em;}' +
+            '#' + ROOT_ID + ' .ab-lb-bar{height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-lb-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:3px;}' +
+            '#' + ROOT_ID + ' .ab-lb-value{font-weight:700;font-size:0.88em;color:#c7d2ff;white-space:nowrap;}' +
+            // Recap hero
+            '#' + ROOT_ID + ' .ab-recap-hero{display:flex;align-items:center;gap:1.5em;padding:1.25em;border-radius:14px;background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(118,75,162,0.08));border:1px solid rgba(102,126,234,0.2);margin-bottom:1.5em;flex-wrap:wrap;}' +
+            '#' + ROOT_ID + ' .ab-recap-big{flex:0 0 auto;text-align:center;}' +
+            '#' + ROOT_ID + ' .ab-recap-big-num{font-size:3.5em;font-weight:900;background:linear-gradient(135deg,#fff,#c7d2ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}' +
+            '#' + ROOT_ID + ' .ab-recap-big-label{font-size:0.72em;text-transform:uppercase;letter-spacing:2px;opacity:0.6;margin-top:0.3em;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini-grid{flex:1;min-width:260px;display:grid;grid-template-columns:repeat(2,1fr);gap:0.6em;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini{padding:0.7em 0.85em;border-radius:10px;background:rgba(255,255,255,0.05);display:flex;align-items:center;gap:0.75em;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini-icon{font-size:1.4em;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini-num{font-size:1.3em;font-weight:800;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini-label{font-size:0.7em;text-transform:uppercase;letter-spacing:1px;opacity:0.6;}' +
+            '#' + ROOT_ID + ' .ab-recap-mini > div:nth-child(2){margin-left:auto;text-align:right;}' +
+            // Recap top-N bar charts
+            '#' + ROOT_ID + ' .ab-recap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1em;}' +
+            '#' + ROOT_ID + ' .ab-recap-section{padding:1em;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}' +
+            '#' + ROOT_ID + ' .ab-recap-section-title{font-size:0.78em;text-transform:uppercase;letter-spacing:1.5px;opacity:0.7;font-weight:700;display:flex;align-items:center;gap:0.5em;margin-bottom:0.85em;}' +
+            '#' + ROOT_ID + ' .ab-recap-bar-row{display:flex;align-items:center;gap:0.6em;margin-bottom:0.55em;}' +
+            '#' + ROOT_ID + ' .ab-recap-bar-name{flex:0 0 40%;font-size:0.85em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+            '#' + ROOT_ID + ' .ab-recap-bar-track{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-recap-bar-fill{height:100%;background:linear-gradient(90deg,#667eea,#a78bfa);border-radius:4px;transition:width 0.5s;}' +
+            '#' + ROOT_ID + ' .ab-recap-bar-val{font-size:0.82em;font-weight:700;color:#c7d2ff;min-width:2.5em;text-align:right;}' +
+            // Server stats grid
+            '#' + ROOT_ID + ' .ab-server-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75em;}' +
+            '#' + ROOT_ID + ' .ab-server-card{padding:1em;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-align:center;transition:transform 0.15s,background 0.15s;}' +
+            '#' + ROOT_ID + ' .ab-server-card:hover{background:rgba(255,255,255,0.07);transform:translateY(-2px);}' +
+            '#' + ROOT_ID + ' .ab-server-icon{font-size:1.8em;margin-bottom:0.3em;}' +
+            '#' + ROOT_ID + ' .ab-server-num{font-size:1.6em;font-weight:800;color:#fff;}' +
+            '#' + ROOT_ID + ' .ab-server-label{font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6;margin-top:0.3em;font-weight:600;}' +
+            '#' + ROOT_ID + ' .ab-server-wide{grid-column:span 2;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn{position:relative;padding:1.1em 3em;border-radius:14px;border:none;background:linear-gradient(135deg,#ffd700 0%,#ff6b35 50%,#e91e63 100%);color:#1a0a1f;font-weight:900;font-size:1.1em;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 40px rgba(255,107,53,0.35),inset 0 1px 0 rgba(255,255,255,0.4),inset 0 -2px 0 rgba(0,0,0,0.25);transition:transform 0.2s,box-shadow 0.3s;overflow:hidden;font-family:inherit;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.55) 50%,transparent 70%);transform:translateX(-120%);transition:transform 0.8s cubic-bezier(.22,.61,.36,1);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 16px 50px rgba(255,107,53,0.55),inset 0 1px 0 rgba(255,255,255,0.5),inset 0 -2px 0 rgba(0,0,0,0.3);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:hover::before{transform:translateX(120%);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:disabled{cursor:not-allowed;background:linear-gradient(135deg,rgba(100,100,120,0.4),rgba(60,60,80,0.6));color:rgba(255,255,255,0.35);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:disabled::before{display:none;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:disabled:hover{transform:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);}' +
             '#' + ROOT_ID + ' .ab-wrap{max-width:1500px;margin:0 auto;}' +
             '#' + ROOT_ID + ' .ab-topbar{display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap;margin-bottom:1.2em;}' +
             '#' + ROOT_ID + ' .ab-back{padding:0.6em 1em;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5em;font-weight:700;}' +
@@ -419,22 +464,43 @@
         var box = el('abSaRecap'); if (box) box.innerHTML = 'Loading recap...';
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=' + period).then(function (r) {
             if (!box) return;
-            var topList = function (items, title) {
+
+            // Render a top-N list as a bar chart
+            var barList = function (items, title, emoji) {
                 if (!items || !items.length) return '';
-                return '<div style="margin-top:1em;"><div class="ab-eyebrow">' + title + '</div><ul style="margin:0.3em 0 0; padding-left:1.2em;">' +
-                    items.map(function (x) { return '<li>' + x.Name + ' \u2014 ' + x.Count + '</li>'; }).join('') + '</ul></div>';
+                var max = Math.max.apply(null, items.map(function (x) { return x.Count; }));
+                if (max === 0) max = 1;
+                return '<div class="ab-recap-section">' +
+                    '<div class="ab-recap-section-title"><span>' + emoji + '</span>' + title + '</div>' +
+                    items.map(function (x, i) {
+                        var pct = Math.round(100 * x.Count / max);
+                        return '<div class="ab-recap-bar-row">' +
+                            '<div class="ab-recap-bar-name">' + escapeHtml(x.Name) + '</div>' +
+                            '<div class="ab-recap-bar-track"><div class="ab-recap-bar-fill" style="width:' + pct + '%;"></div></div>' +
+                            '<div class="ab-recap-bar-val">' + x.Count + '</div>' +
+                        '</div>';
+                    }).join('') +
+                '</div>';
             };
+
             box.innerHTML =
-                '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:0.75em;">' +
-                    '<div class="ab-stat"><div class="ab-stat-t">Items</div><div class="ab-stat-v">' + (r.TotalItems || 0) + '</div></div>' +
-                    '<div class="ab-stat"><div class="ab-stat-t">Movies</div><div class="ab-stat-v">' + (r.MoviesWatched || 0) + '</div></div>' +
-                    '<div class="ab-stat"><div class="ab-stat-t">Episodes</div><div class="ab-stat-v">' + (r.EpisodesWatched || 0) + '</div></div>' +
-                    '<div class="ab-stat"><div class="ab-stat-t">Days active</div><div class="ab-stat-v">' + (r.DaysWatched || 0) + '</div></div>' +
-                    '<div class="ab-stat"><div class="ab-stat-t">Unlocks</div><div class="ab-stat-v">' + (r.BadgesUnlocked || 0) + '</div></div>' +
+                '<div class="ab-recap-hero">' +
+                    '<div class="ab-recap-big">' +
+                        '<div class="ab-recap-big-num">' + (r.TotalItems || 0) + '</div>' +
+                        '<div class="ab-recap-big-label">Total items watched</div>' +
+                    '</div>' +
+                    '<div class="ab-recap-mini-grid">' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🎬</div><div class="ab-recap-mini-num">' + (r.MoviesWatched || 0) + '</div><div class="ab-recap-mini-label">Movies</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📺</div><div class="ab-recap-mini-num">' + (r.EpisodesWatched || 0) + '</div><div class="ab-recap-mini-label">Episodes</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📅</div><div class="ab-recap-mini-num">' + (r.DaysWatched || 0) + '</div><div class="ab-recap-mini-label">Active days</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🏆</div><div class="ab-recap-mini-num">' + (r.BadgesUnlocked || 0) + '</div><div class="ab-recap-mini-label">Unlocks</div></div>' +
+                    '</div>' +
                 '</div>' +
-                topList(r.TopGenres, 'Top genres') +
-                topList(r.TopDirectors, 'Top directors') +
-                topList(r.TopActors, 'Top actors');
+                '<div class="ab-recap-grid">' +
+                    barList(r.TopGenres, 'Top genres', '🎭') +
+                    barList(r.TopDirectors, 'Top directors', '🎬') +
+                    barList(r.TopActors, 'Top actors', '⭐') +
+                '</div>';
         }).catch(function () {
             if (box) box.innerHTML = '<div class="ab-muted">Failed to load recap.</div>';
         });
@@ -571,22 +637,28 @@
             return 'rgba(102, 126, 234, ' + intensity.toFixed(2) + ')';
         }
 
-        // Cell size scales with total days so that larger ranges still fit
-        var cellSize = days <= 30 ? 18 : days <= 90 ? 14 : days <= 180 ? 10 : 8;
-        var gap = 2;
-        var step = cellSize + gap;
+        // Use a fixed coordinate space and let the SVG stretch to fill the container
+        // (preserveAspectRatio=none). The cells fill their grid cell space so as the
+        // container grows horizontally the heatmap grows with it.
+        var cols = Math.ceil(days / 7);
+        var cellW = 100;
+        var cellH = 100;
+        var gap = 12;
+        var step = cellW + gap;
+        var stepH = cellH + gap;
 
         var svgCells = cells.map(function (c, i) {
             var col = Math.floor(i / 7);
             var row = i % 7;
             var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
-            return '<rect x="' + (col * step) + '" y="' + (row * step) + '" width="' + cellSize + '" height="' + cellSize + '" rx="2" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
+            return '<rect x="' + (col * step) + '" y="' + (row * stepH) + '" width="' + cellW + '" height="' + cellH + '" rx="14" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
         }).join('');
 
-        var cols = Math.ceil(days / 7);
         var width = cols * step;
-        var height = 7 * step;
-        return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '" preserveAspectRatio="xMidYMid meet">' + svgCells + '</svg>' +
+        var height = 7 * stepH;
+        // Let the SVG scale non-uniformly to fill its container width + a reasonable height
+        var heightPx = days <= 30 ? 180 : days <= 90 ? 220 : days <= 180 ? 260 : 300;
+        return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + heightPx + 'px" preserveAspectRatio="none" style="display:block;">' + svgCells + '</svg>' +
             '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
     }
 
@@ -612,9 +684,52 @@
         fetchJson('Plugins/AchievementBadges/leaderboard/' + cat + '?limit=10').then(function (lb) {
             var box = el('abSaLb'); if (!box) return;
             if (!lb || !lb.length) { box.innerHTML = '<div class="ab-muted">No data yet.</div>'; return; }
-            box.innerHTML = lb.map(function (e, i) {
-                return '<div class="ab-lb-row"><div><strong>#' + (i + 1) + '</strong> \u2022 ' + (e.UserName || e.UserId) + '</div><div>' + (e.Value || 0) + '</div></div>';
+
+            var maxVal = Math.max.apply(null, lb.map(function (e) { return e.Value || 0; }));
+            if (maxVal === 0) maxVal = 1;
+
+            var suffix = {
+                score: ' pts', movies: ' movies', episodes: ' episodes',
+                hours: ' hrs', streak: ' days', series: ' series'
+            }[cat] || '';
+
+            // Top 3 podium
+            var top3 = lb.slice(0, 3);
+            var podiumSvg = '';
+            if (top3.length >= 1) {
+                var ordered = [top3[1], top3[0], top3[2]]; // silver, gold, bronze for podium order
+                var heights = [80, 110, 60];
+                var colors = ['#c0c0c0', '#ffd700', '#cd7f32'];
+                var medals = ['🥈', '🥇', '🥉'];
+                var labels = ['2nd', '1st', '3rd'];
+                podiumSvg = '<div class="ab-lb-podium">' + ordered.map(function (e, i) {
+                    if (!e) return '<div class="ab-lb-podium-col ab-lb-podium-empty" style="height:' + heights[i] + 'px;"></div>';
+                    return '<div class="ab-lb-podium-col">' +
+                        '<div class="ab-lb-podium-medal">' + medals[i] + '</div>' +
+                        '<div class="ab-lb-podium-name">' + escapeHtml(e.UserName || e.UserId) + '</div>' +
+                        '<div class="ab-lb-podium-val" style="color:' + colors[i] + ';">' + (e.Value || 0) + suffix + '</div>' +
+                        '<div class="ab-lb-podium-bar" style="height:' + heights[i] + 'px; background:linear-gradient(180deg,' + colors[i] + ',' + colors[i] + '66);">' +
+                            '<div class="ab-lb-podium-rank">' + labels[i] + '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('') + '</div>';
+            }
+
+            // Rows 4-10 as sleek list
+            var rest = lb.slice(3);
+            var rowsHtml = rest.map(function (e, i) {
+                var pct = Math.round(100 * (e.Value || 0) / maxVal);
+                return '<div class="ab-lb-row-new">' +
+                    '<div class="ab-lb-rank">#' + (i + 4) + '</div>' +
+                    '<div class="ab-lb-info">' +
+                        '<div class="ab-lb-name">' + escapeHtml(e.UserName || e.UserId) + '</div>' +
+                        '<div class="ab-lb-bar"><div class="ab-lb-fill" style="width:' + pct + '%;"></div></div>' +
+                    '</div>' +
+                    '<div class="ab-lb-value">' + (e.Value || 0) + suffix + '</div>' +
+                '</div>';
             }).join('');
+
+            box.innerHTML = podiumSvg + (rest.length ? '<div style="margin-top:1em;">' + rowsHtml + '</div>' : '');
         });
     }
 
@@ -732,12 +847,15 @@
 
             var stBox = el('abSaServerStats');
             if (stBox && stats) {
-                stBox.innerHTML = '<div>Total users: ' + (stats.TotalUsers || 0) + '</div>' +
-                    '<div style="margin-top:0.4em;">Badges unlocked: ' + (stats.TotalBadgesUnlocked || 0) + '</div>' +
-                    '<div style="margin-top:0.4em;">Items watched: ' + (stats.TotalItemsWatched || 0) + '</div>' +
-                    '<div style="margin-top:0.4em;">Movies watched: ' + (stats.TotalMoviesWatched || 0) + '</div>' +
-                    '<div style="margin-top:0.4em;">Series completed: ' + (stats.TotalSeriesCompleted || 0) + '</div>' +
-                    '<div style="margin-top:0.4em;">Most common badge: ' + (stats.MostCommonBadge || 'None') + '</div>';
+                stBox.innerHTML =
+                    '<div class="ab-server-grid">' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">👥</div><div class="ab-server-num">' + (stats.TotalUsers || 0) + '</div><div class="ab-server-label">Users</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">🏆</div><div class="ab-server-num">' + (stats.TotalBadgesUnlocked || 0) + '</div><div class="ab-server-label">Badges unlocked</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">📽️</div><div class="ab-server-num">' + (stats.TotalItemsWatched || 0) + '</div><div class="ab-server-label">Items watched</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">🎬</div><div class="ab-server-num">' + (stats.TotalMoviesWatched || 0) + '</div><div class="ab-server-label">Movies</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">📺</div><div class="ab-server-num">' + (stats.TotalSeriesCompleted || 0) + '</div><div class="ab-server-label">Series completed</div></div>' +
+                        '<div class="ab-server-card ab-server-wide"><div class="ab-server-icon">⭐</div><div class="ab-server-num" style="font-size:1.2em;">' + escapeHtml(stats.MostCommonBadge || 'None') + '</div><div class="ab-server-label">Most common badge</div></div>' +
+                    '</div>';
             }
         }).catch(function (err) {
             showError('Failed to load achievements. ' + (err && err.message ? err.message : String(err)));

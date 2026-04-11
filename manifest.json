@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.5",
+        "changelog": "UI overhaul pass. Home screen widget removed completely (was flashing then being clobbered by other plugins rebuilding the home DOM). Profile card fully redesigned: conic-gradient spinning avatar ring, tier-colored glow, large gradient score number, progress bar with tier accent, hover-lift stats grid. Leaderboard now has a 3-person podium at the top with gold/silver/bronze bars + medals, and rows 4-10 as sleek list with progress bars. Server stats now a 6-card grid with emoji icons and hover-lift. Recap top genres / directors / actors rendered as bar charts instead of boring bullet lists, with a hero card showing total items + mini-grid for movies/episodes/days/unlocks. Badge points chip larger and more prominent (+88% font + glow). Heatmap SVG now uses preserveAspectRatio=none so it stretches to fill the container width at larger ranges. Prestige button polished: gold-to-pink gradient, no harsh border, bigger padding, nicer hover lift, cleaner disabled state. Confetti burst on achievement unlock toasts (28 particles in rarity color + rainbow). Toast itself slightly larger with better typography and rarity glow.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.5/Jellyfin.Plugin.AchievementBadgesv1.5.5.zip",
+        "checksum": "5984D0B5A9FB1B3AEB3EE8BEE940A70C"
+      },
+      {
         "version": "1.5.4",
         "changelog": "Silent scan so Watch History backfill no longer spams unlock toasts - scanned badges use their original play date as UnlockedAt so the toast poller ignores them. Profile card now server-side rendered with all data baked into the HTML - no more Failed to load. Item detail ribbon disabled by default (opt-in via admin UI). Multiple concurrent quests - 3 daily + 3 weekly at the same time, rotated deterministically per day/week. Each badge card now shows its point value (+X pts) scaled by your prestige level (+50% per prestige). Fancy animated prestige button with gradient, shine effect and glow. Heatmap range dropdown 30/90/180/365 days. Updated README with full feature list, all API endpoints, and prerequisites table.",
         "targetAbi": "10.11.0.0",
