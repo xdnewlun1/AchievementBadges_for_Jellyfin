@@ -430,6 +430,88 @@ padding:1em;
 
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Visual badge editor (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">Create a custom badge with a form instead of writing JSON.</p>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.5em;">
+                            <label>Id<br><input type="text" id="abVbId" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Title<br><input type="text" id="abVbTitle" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Description<br><input type="text" id="abVbDesc" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Category<br><input type="text" id="abVbCategory" value="Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Metric<br>
+                                <select id="abVbMetric" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option>TotalItemsWatched</option><option>MoviesWatched</option><option>SeriesCompleted</option>
+                                    <option>LateNightSessions</option><option>EarlyMorningSessions</option><option>WeekendSessions</option>
+                                    <option>UniqueLibrariesVisited</option><option>DaysWatched</option><option>BestWatchStreak</option>
+                                    <option>MaxEpisodesInSingleDay</option><option>MaxMoviesInSingleDay</option>
+                                    <option>UniqueDecadesWatched</option><option>UniqueCountriesWatched</option>
+                                    <option>UniqueLanguagesWatched</option><option>UniqueGenresWatched</option>
+                                    <option>TotalMinutesWatched</option><option>LongestItemMinutes</option>
+                                    <option>ShortItemsWatched</option><option>RewatchCount</option>
+                                    <option>LongSeriesCompleted</option><option>VeryLongSeriesCompleted</option>
+                                    <option>DaysLoggedIn</option><option>CurrentLoginStreak</option>
+                                    <option>LibraryCompletionPercent</option>
+                                </select>
+                            </label>
+                            <label>Target value<br><input type="number" id="abVbTarget" value="1" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Rarity<br>
+                                <select id="abVbRarity" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option>Common</option><option>Uncommon</option><option>Rare</option><option>Epic</option><option>Legendary</option><option>Mythic</option>
+                                </select>
+                            </label>
+                            <label>Icon (material icons name)<br><input type="text" id="abVbIcon" value="emoji_events" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label style="display:flex; align-items:center; gap:0.5em;">
+                                <input type="checkbox" id="abVbSecret"> Secret (hidden until unlocked)
+                            </label>
+                        </div>
+                        <div style="margin-top:0.75em;">
+                            <button is="emby-button" type="button" class="raised button-submit" id="abVbAddBtn">Add to custom badges</button>
+                        </div>
+                        <div id="abVbStatus" class="secondaryText"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Challenge templates (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">One-click templates for common seasonal challenges.</p>
+                        <div style="margin-bottom:0.5em;"><button is="emby-button" type="button" class="raised" id="abChallengeTplLoadBtn">Load templates</button></div>
+                        <div id="abChallengeTplList"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Audit log (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <button is="emby-button" type="button" class="raised" id="abAuditReloadBtn">Reload</button>
+                        <div id="abAuditList" style="max-height:400px; overflow-y:auto; margin-top:0.75em; font-family:monospace; font-size:0.82em;"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Inject progress (admin / debug)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">Manually set counter values for the currently loaded user (for testing or gifting).</p>
+                        <div style="display:grid; grid-template-columns:1fr 120px; gap:0.5em; align-items:center;">
+                            <label>Counter key (e.g. MoviesWatched, TotalItemsWatched, LateNightSessions):<br><input type="text" id="abInjectKey" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label>Value<br><input type="number" id="abInjectVal" value="0" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                        </div>
+                        <div style="margin-top:0.5em;">
+                            <button is="emby-button" type="button" class="raised" id="abInjectBtn">Inject</button>
+                        </div>
+                        <div id="abInjectStatus" class="secondaryText"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
                         Custom badges (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
@@ -1320,6 +1402,95 @@ padding:1em;
         }
     });
     loadChallenges();
+
+    // --- Visual badge editor ---
+    var vbAddBtn = document.getElementById('abVbAddBtn');
+    var vbStatus = document.getElementById('abVbStatus');
+    vbAddBtn.addEventListener('click', function () {
+        var newBadge = {
+            Id: document.getElementById('abVbId').value.trim(),
+            Title: document.getElementById('abVbTitle').value.trim(),
+            Description: document.getElementById('abVbDesc').value.trim(),
+            Category: document.getElementById('abVbCategory').value.trim() || 'Custom',
+            Metric: document.getElementById('abVbMetric').value,
+            TargetValue: parseInt(document.getElementById('abVbTarget').value, 10) || 1,
+            Rarity: document.getElementById('abVbRarity').value,
+            Icon: document.getElementById('abVbIcon').value.trim() || 'emoji_events',
+            Key: (document.getElementById('abVbId').value.trim() || 'custom').replace(/-/g, '_'),
+            IsSecret: document.getElementById('abVbSecret').checked,
+            IsCustom: true
+        };
+        if (!newBadge.Id || !newBadge.Title) { vbStatus.textContent = 'Id and Title are required.'; return; }
+        fetchJson('Plugins/AchievementBadges/admin/custom-badges').then(function (list) {
+            list = Array.isArray(list) ? list : [];
+            list.push(newBadge);
+            return fetchJson('Plugins/AchievementBadges/admin/custom-badges', 'POST', list);
+        }).then(function (res) {
+            vbStatus.textContent = 'Added. Total custom badges: ' + res.Count;
+            loadCustomBadges();
+            reloadAll();
+        }).catch(function (e) { vbStatus.textContent = 'Failed: ' + (e.message || e); });
+    });
+
+    // --- Challenge templates ---
+    var challengeTplLoadBtn = document.getElementById('abChallengeTplLoadBtn');
+    var challengeTplList = document.getElementById('abChallengeTplList');
+    challengeTplLoadBtn.addEventListener('click', function () {
+        fetchJson('Plugins/AchievementBadges/admin/challenge-templates').then(function (tpls) {
+            challengeTplList.innerHTML = '';
+            (tpls || []).forEach(function (tpl) {
+                var row = document.createElement('div');
+                row.style.cssText = 'padding:0.5em 0.75em; margin:0.5em 0; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;';
+                row.innerHTML = '<div><div style="font-weight:600;">' + tpl.Title + '</div><div class="secondaryText" style="font-size:0.85em;">' + tpl.Description + '</div></div>';
+                var btn = document.createElement('button');
+                btn.textContent = 'Add';
+                btn.className = 'raised';
+                btn.addEventListener('click', function () {
+                    fetchJson('Plugins/AchievementBadges/admin/challenges').then(function (list) {
+                        list = Array.isArray(list) ? list : [];
+                        list.push(tpl);
+                        return fetchJson('Plugins/AchievementBadges/admin/challenges', 'POST', list);
+                    }).then(function () { loadChallenges(); reloadAll(); });
+                });
+                row.appendChild(btn);
+                challengeTplList.appendChild(row);
+            });
+        });
+    });
+
+    // --- Audit log ---
+    var auditReloadBtn = document.getElementById('abAuditReloadBtn');
+    var auditList = document.getElementById('abAuditList');
+    function loadAudit() {
+        fetchJson('Plugins/AchievementBadges/admin/audit-log?limit=200').then(function (entries) {
+            if (!entries || !entries.length) { auditList.innerHTML = '<div class="secondaryText">No entries yet.</div>'; return; }
+            auditList.innerHTML = entries.map(function (e) {
+                var d = new Date(e.At);
+                return '<div style="padding:0.25em 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
+                    '<span style="opacity:0.6;">' + d.toLocaleString() + '</span> ' +
+                    '<span style="color:#4caf50;">[' + e.Type + ']</span> ' +
+                    '<strong>' + e.UserName + '</strong> — ' + e.Details + '</div>';
+            }).join('');
+        });
+    }
+    auditReloadBtn.addEventListener('click', loadAudit);
+    loadAudit();
+
+    // --- Inject counters ---
+    var injectBtn = document.getElementById('abInjectBtn');
+    var injectStatus = document.getElementById('abInjectStatus');
+    injectBtn.addEventListener('click', function () {
+        var uid = getUserId();
+        if (!uid) { injectStatus.textContent = 'Load a user first.'; return; }
+        var key = document.getElementById('abInjectKey').value.trim();
+        var val = parseInt(document.getElementById('abInjectVal').value, 10) || 0;
+        if (!key) { injectStatus.textContent = 'Enter a counter key.'; return; }
+        var counters = {};
+        counters[key] = val;
+        fetchJson('Plugins/AchievementBadges/admin/users/' + uid + '/inject-counters', 'POST', { Counters: counters })
+            .then(function () { injectStatus.textContent = 'Injected. Reloading...'; reloadAll(); })
+            .catch(function (e) { injectStatus.textContent = 'Failed: ' + (e.message || e); });
+    });
 })();
 </script>
 

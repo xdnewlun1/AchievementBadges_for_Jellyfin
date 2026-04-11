@@ -20,19 +20,28 @@ public class AchievementBadgesController : ControllerBase
     private readonly WatchHistoryBackfillService _backfillService;
     private readonly LibraryCompletionService _libraryCompletionService;
     private readonly RecapService _recapService;
+    private readonly RecommendationService _recommendationService;
+    private readonly QuestService _questService;
+    private readonly AuditLogService _auditLog;
 
     public AchievementBadgesController(
         AchievementBadgeService badgeService,
         PlaybackCompletionService playbackCompletionService,
         WatchHistoryBackfillService backfillService,
         LibraryCompletionService libraryCompletionService,
-        RecapService recapService)
+        RecapService recapService,
+        RecommendationService recommendationService,
+        QuestService questService,
+        AuditLogService auditLog)
     {
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
         _backfillService = backfillService;
         _libraryCompletionService = libraryCompletionService;
         _recapService = recapService;
+        _recommendationService = recommendationService;
+        _questService = questService;
+        _auditLog = auditLog;
     }
 
     [HttpGet("test")]
@@ -187,6 +196,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/unlock/{badgeId}")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(typeof(AchievementBadge), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<AchievementBadge> UnlockBadge([FromRoute] string userId, [FromRoute] string badgeId)
@@ -202,6 +212,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/progress/{badgeId}")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(typeof(AchievementBadge), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<AchievementBadge> AddProgress(
@@ -220,6 +231,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/simulate-playback")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
     public ActionResult<List<AchievementBadge>> SimulatePlayback(
         [FromRoute] string userId,
@@ -239,6 +251,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/reset")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
     public ActionResult<List<AchievementBadge>> ResetBadges([FromRoute] string userId)
     {
@@ -311,6 +324,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/backfill")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult BackfillUser([FromRoute] string userId)
     {
@@ -319,6 +333,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("backfill-all")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult BackfillAll()
     {
@@ -327,6 +342,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpGet("admin/badge-catalog")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetBadgeCatalog()
     {
@@ -372,6 +388,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/badge-catalog/toggle")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult ToggleBadge([FromBody] BadgeToggleRequest request)
@@ -408,6 +425,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/badge-catalog/bulk")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult BulkSetDisabled([FromBody] BadgeBulkToggleRequest request)
     {
@@ -545,6 +563,7 @@ public class AchievementBadgesController : ControllerBase
     // ---------- Custom badges (admin) -------------------------------
 
     [HttpGet("admin/custom-badges")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetCustomBadges()
     {
@@ -552,6 +571,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/custom-badges")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult SaveCustomBadges([FromBody] List<AchievementDefinition> badges)
     {
@@ -567,6 +587,7 @@ public class AchievementBadgesController : ControllerBase
     // ---------- Challenges (admin) ----------------------------------
 
     [HttpGet("admin/challenges")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetChallenges()
     {
@@ -574,6 +595,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/challenges")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult SaveChallenges([FromBody] List<AchievementDefinition> challenges)
     {
@@ -596,6 +618,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpGet("admin/webhook")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetWebhookConfig()
     {
@@ -609,6 +632,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/webhook")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult SaveWebhookConfig([FromBody] WebhookConfigRequest request)
     {
@@ -649,6 +673,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("admin/ui-features")]
+    [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult SaveUiFeatures([FromBody] UiFeatureFlagsRequest request)
     {
@@ -660,5 +685,163 @@ public class AchievementBadgesController : ControllerBase
         config.EnableItemDetailRibbon = request?.EnableItemDetailRibbon ?? true;
         plugin.UpdateConfiguration(config);
         return Ok(new { Success = true });
+    }
+
+    // ---------- Prestige + score bank --------------------------------
+
+    [HttpPost("users/{userId}/prestige")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult Prestige([FromRoute] string userId)
+    {
+        return Ok(_badgeService.PrestigeReset(userId));
+    }
+
+    [HttpGet("users/{userId}/bank")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetBank([FromRoute] string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        return Ok(new
+        {
+            ScoreBank = profile?.ScoreBank ?? 0,
+            LifetimeScore = profile?.LifetimeScore ?? 0,
+            PrestigeLevel = profile?.PrestigeLevel ?? 0,
+            BoughtBadgeIds = profile?.BoughtBadgeIds ?? new List<string>(),
+            ComboCount = profile?.ComboCount ?? 0,
+            BestComboCount = profile?.BestComboCount ?? 0
+        });
+    }
+
+    [HttpPost("users/{userId}/buy-badge/{badgeId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult BuyBadge([FromRoute] string userId, [FromRoute] string badgeId)
+    {
+        var result = _badgeService.SpendScoreForBadge(userId, badgeId);
+        return Ok(result);
+    }
+
+    [HttpPost("users/{userId}/gift/{toUserId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GiftScore([FromRoute] string userId, [FromRoute] string toUserId, [FromQuery] int amount = 0)
+    {
+        var result = _badgeService.GiftScore(userId, toUserId, amount);
+        return Ok(result);
+    }
+
+    // ---------- Daily quest ------------------------------------------
+
+    [HttpGet("users/{userId}/daily-quest")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetDailyQuest([FromRoute] string userId)
+    {
+        return Ok(_questService.GetOrCreate(userId));
+    }
+
+    // ---------- Recommendations --------------------------------------
+
+    [HttpGet("users/{userId}/chase/{badgeId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult ChaseBadge([FromRoute] string userId, [FromRoute] string badgeId, [FromQuery] int limit = 10)
+    {
+        return Ok(_recommendationService.ChaseBadge(userId, badgeId, limit));
+    }
+
+    [HttpGet("users/{userId}/recommendations")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetRecommendations([FromRoute] string userId, [FromQuery] int limit = 10)
+    {
+        return Ok(_recommendationService.GetRecommendations(userId, limit));
+    }
+
+    // ---------- Export / import / per-badge reset --------------------
+
+    [HttpGet("users/{userId}/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult ExportProfile([FromRoute] string userId)
+    {
+        return Ok(_badgeService.ExportProfile(userId));
+    }
+
+    [HttpPost("users/{userId}/import")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult ImportProfile([FromRoute] string userId, [FromBody] UserAchievementProfile profile)
+    {
+        _badgeService.ImportProfile(userId, profile);
+        return Ok(new { Success = true });
+    }
+
+    [HttpPost("users/{userId}/reset-badge/{badgeId}")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult ResetBadge([FromRoute] string userId, [FromRoute] string badgeId)
+    {
+        _badgeService.ResetBadge(userId, badgeId);
+        return Ok(new { Success = true });
+    }
+
+    public class InjectCountersRequest
+    {
+        public Dictionary<string, long>? Counters { get; set; }
+    }
+
+    [HttpPost("admin/users/{userId}/inject-counters")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult InjectCounters([FromRoute] string userId, [FromBody] InjectCountersRequest request)
+    {
+        _badgeService.InjectCounters(userId, request?.Counters ?? new());
+        return Ok(new { Success = true });
+    }
+
+    // ---------- Audit log --------------------------------------------
+
+    [HttpGet("admin/audit-log")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetAuditLog([FromQuery] int limit = 200)
+    {
+        return Ok(_auditLog.GetRecent(limit));
+    }
+
+    // ---------- Challenge templates -----------------------------------
+
+    [HttpGet("admin/challenge-templates")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetChallengeTemplates()
+    {
+        var now = DateTimeOffset.Now;
+        var monthEnd = new DateTimeOffset(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month), 23, 59, 59, now.Offset);
+        return Ok(new[]
+        {
+            new AchievementDefinition
+            {
+                Id = "challenge-monthly-10-movies", Title = "Monthly Movie Marathon", Description = "Watch 10 movies this month.",
+                Icon = "movie", Category = "Challenge", Rarity = "Epic", Metric = AchievementMetric.MoviesWatched, TargetValue = 10,
+                ChallengeStart = now, ChallengeEnd = monthEnd
+            },
+            new AchievementDefinition
+            {
+                Id = "challenge-october-horror", Title = "October Horror Month", Description = "Watch 15 items during October.",
+                Icon = "whatshot", Category = "Challenge", Rarity = "Legendary", Metric = AchievementMetric.TotalItemsWatched, TargetValue = 15,
+                ChallengeStart = new DateTimeOffset(now.Year, 10, 1, 0, 0, 0, now.Offset),
+                ChallengeEnd = new DateTimeOffset(now.Year, 10, 31, 23, 59, 59, now.Offset)
+            },
+            new AchievementDefinition
+            {
+                Id = "challenge-new-year", Title = "New Year's Resolution", Description = "Watch 20 items in January.",
+                Icon = "cake", Category = "Challenge", Rarity = "Rare", Metric = AchievementMetric.TotalItemsWatched, TargetValue = 20,
+                ChallengeStart = new DateTimeOffset(now.Year, 1, 1, 0, 0, 0, now.Offset),
+                ChallengeEnd = new DateTimeOffset(now.Year, 1, 31, 23, 59, 59, now.Offset)
+            },
+            new AchievementDefinition
+            {
+                Id = "challenge-summer-blockbuster", Title = "Summer Blockbuster Season", Description = "Watch 10 movies between June and August.",
+                Icon = "wb_sunny", Category = "Challenge", Rarity = "Epic", Metric = AchievementMetric.MoviesWatched, TargetValue = 10,
+                ChallengeStart = new DateTimeOffset(now.Year, 6, 1, 0, 0, 0, now.Offset),
+                ChallengeEnd = new DateTimeOffset(now.Year, 8, 31, 23, 59, 59, now.Offset)
+            }
+        });
     }
 }

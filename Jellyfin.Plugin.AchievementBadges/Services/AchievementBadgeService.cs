@@ -19,6 +19,7 @@ public class AchievementBadgeService
     private readonly ILogger<AchievementBadgeService> _logger;
     private readonly IUserManager _userManager;
     private readonly WebhookNotifier? _webhookNotifier;
+    private readonly AuditLogService? _auditLog;
 
     private Dictionary<string, UserAchievementProfile> _userProfiles = new();
 
@@ -26,11 +27,13 @@ public class AchievementBadgeService
         IApplicationPaths applicationPaths,
         IUserManager userManager,
         WebhookNotifier webhookNotifier,
+        AuditLogService auditLog,
         ILogger<AchievementBadgeService> logger)
     {
         _logger = logger;
         _userManager = userManager;
         _webhookNotifier = webhookNotifier;
+        _auditLog = auditLog;
 
         var pluginDataPath = Path.Combine(applicationPaths.PluginConfigurationsPath, "achievementbadges");
         Directory.CreateDirectory(pluginDataPath);
@@ -46,6 +49,182 @@ public class AchievementBadgeService
         {
             return _userProfiles.TryGetValue(userId, out var profile) ? profile : null;
         }
+    }
+
+    public void SaveProfileDirect(UserAchievementProfile profile)
+    {
+        lock (_lock)
+        {
+            _userProfiles[NormalizeUserId(profile.UserId)] = profile;
+            Save();
+        }
+    }
+
+    public object PrestigeReset(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var currentScore = AchievementScoreHelper.GetTotalUnlockedScore(profile.Badges.Where(b => IsBadgeEnabled(b.Id)));
+            if (currentScore < 12000)
+            {
+                return new { Success = false, Message = "You need at least 12000 score (Legend rank) to prestige." };
+            }
+
+            profile.PrestigeLevel++;
+            profile.LifetimeScore += currentScore;
+            profile.ScoreBank = Math.Max(profile.ScoreBank, 0);
+
+            // Reset counters + badges but preserve prestige/lifetime/bank/bought
+            profile.Counters = new UserAchievementCounters();
+            profile.Badges = GetActiveDefinitions().Select(def => CreateBadgeFromDefinition(def, userId)).ToList();
+            profile.EquippedBadgeIds = new List<string>();
+            profile.BoughtBadgeIds = new List<string>();
+
+            Save();
+            return new { Success = true, PrestigeLevel = profile.PrestigeLevel, LifetimeScore = profile.LifetimeScore };
+        }
+    }
+
+    public object SpendScoreForBadge(string userId, string badgeId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var def = GetActiveDefinitions().FirstOrDefault(d => d.Id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+            if (def is null) return new { Success = false, Message = "Badge not found." };
+
+            var cost = GetPurchaseCost(def.Rarity);
+            if (profile.ScoreBank < cost)
+            {
+                return new { Success = false, Message = $"Not enough score bank. Need {cost}, have {profile.ScoreBank}." };
+            }
+
+            var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+            if (badge is null || badge.Unlocked)
+            {
+                return new { Success = false, Message = "Already unlocked or missing." };
+            }
+
+            profile.ScoreBank -= cost;
+            badge.Unlocked = true;
+            badge.UnlockedAt = DateTimeOffset.UtcNow;
+            badge.CurrentValue = badge.TargetValue;
+            profile.BoughtBadgeIds.Add(badge.Id);
+            Save();
+            return new { Success = true, Cost = cost, RemainingBank = profile.ScoreBank };
+        }
+    }
+
+    public object GiftScore(string fromUserId, string toUserId, int amount)
+    {
+        if (amount <= 0) return new { Success = false, Message = "Amount must be positive." };
+        fromUserId = NormalizeUserId(fromUserId);
+        toUserId = NormalizeUserId(toUserId);
+        if (fromUserId == toUserId) return new { Success = false, Message = "Can't gift to yourself." };
+
+        lock (_lock)
+        {
+            var from = GetOrCreateProfile(fromUserId);
+            var to = GetOrCreateProfile(toUserId);
+            if (from.ScoreBank < amount) return new { Success = false, Message = "Insufficient score bank." };
+
+            from.ScoreBank -= amount;
+            to.ScoreBank += amount;
+            Save();
+            return new { Success = true, FromRemaining = from.ScoreBank, ToBalance = to.ScoreBank };
+        }
+    }
+
+    public object ExportProfile(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            return _userProfiles.TryGetValue(userId, out var profile)
+                ? (object)profile
+                : new { };
+        }
+    }
+
+    public void ImportProfile(string userId, UserAchievementProfile profile)
+    {
+        userId = NormalizeUserId(userId);
+        if (profile is null) return;
+        profile.UserId = userId;
+        lock (_lock)
+        {
+            _userProfiles[userId] = profile;
+            SyncDefinitions(profile, userId);
+            EvaluateBadges(profile, userId);
+            Save();
+        }
+    }
+
+    public void ResetBadge(string userId, string badgeId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+            if (badge is null) return;
+            badge.Unlocked = false;
+            badge.UnlockedAt = null;
+            badge.CurrentValue = 0;
+            profile.EquippedBadgeIds.RemoveAll(id => id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+            profile.BoughtBadgeIds.RemoveAll(id => id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+            Save();
+        }
+    }
+
+    public void InjectCounters(string userId, Dictionary<string, long> updates)
+    {
+        if (updates is null) return;
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var c = profile.Counters;
+            foreach (var kvp in updates)
+            {
+                switch (kvp.Key)
+                {
+                    case nameof(c.TotalItemsWatched): c.TotalItemsWatched = (int)kvp.Value; break;
+                    case nameof(c.MoviesWatched): c.MoviesWatched = (int)kvp.Value; break;
+                    case nameof(c.SeriesCompleted): c.SeriesCompleted = (int)kvp.Value; break;
+                    case nameof(c.LateNightSessions): c.LateNightSessions = (int)kvp.Value; break;
+                    case nameof(c.EarlyMorningSessions): c.EarlyMorningSessions = (int)kvp.Value; break;
+                    case nameof(c.WeekendSessions): c.WeekendSessions = (int)kvp.Value; break;
+                    case nameof(c.BestWatchStreak): c.BestWatchStreak = (int)kvp.Value; break;
+                    case nameof(c.TotalMinutesWatched): c.TotalMinutesWatched = kvp.Value; break;
+                    case nameof(c.LongestItemMinutes): c.LongestItemMinutes = (int)kvp.Value; break;
+                    case nameof(c.ShortItemsWatched): c.ShortItemsWatched = (int)kvp.Value; break;
+                    case nameof(c.RewatchCount): c.RewatchCount = (int)kvp.Value; break;
+                    case nameof(c.LongSeriesCompleted): c.LongSeriesCompleted = (int)kvp.Value; break;
+                    case nameof(c.VeryLongSeriesCompleted): c.VeryLongSeriesCompleted = (int)kvp.Value; break;
+                    case nameof(c.BestLoginStreak): c.BestLoginStreak = (int)kvp.Value; break;
+                }
+            }
+            EvaluateBadges(profile, userId);
+            Save();
+        }
+    }
+
+    private static int GetPurchaseCost(string? rarity)
+    {
+        return (rarity ?? string.Empty).ToLowerInvariant() switch
+        {
+            "common" => 150,
+            "uncommon" => 300,
+            "rare" => 600,
+            "epic" => 1200,
+            "legendary" => 2500,
+            "mythic" => 5000,
+            _ => 400
+        };
     }
 
     public void UpdateLibraryCompletionPercents(string userId, Dictionary<string, int> percents)
@@ -561,16 +740,41 @@ public class AchievementBadgeService
                 counters.WeekendSessions++;
             }
 
+            // Combo multiplier: if watched within 15 minutes of last playback, extend the combo
+            var comboMultiplier = 1.0;
+            if (profile.LastPlaybackAt is DateTimeOffset last &&
+                (timestamp - last).TotalMinutes > 0 &&
+                (timestamp - last).TotalMinutes < 15)
+            {
+                profile.ComboCount++;
+                if (profile.ComboCount > profile.BestComboCount)
+                {
+                    profile.BestComboCount = profile.ComboCount;
+                }
+                comboMultiplier = 1.0 + Math.Min(profile.ComboCount * 0.1, 1.0);
+            }
+            else
+            {
+                profile.ComboCount = 1;
+            }
+            profile.LastPlaybackAt = timestamp;
+
+            // Base score accrual into the bank: 5 points per watched item, scaled by combo
+            var earned = (int)Math.Round(5 * comboMultiplier);
+            profile.ScoreBank += earned;
+
             EvaluateBadges(profile, userId);
             Save();
 
             _logger.LogInformation(
-                "[AchievementBadges] Recorded playback user={UserId} movie={IsMovie} ep={IsEpisode} seriesDone={SeriesCompleted} library={LibraryName}",
+                "[AchievementBadges] Recorded playback user={UserId} movie={IsMovie} ep={IsEpisode} seriesDone={SeriesCompleted} library={LibraryName} combo={Combo} earned={Earned}",
                 userId,
                 context.IsMovie,
                 context.IsEpisode,
                 context.SeriesCompleted,
-                context.LibraryName ?? string.Empty);
+                context.LibraryName ?? string.Empty,
+                profile.ComboCount,
+                earned);
 
             return GetEnabledBadgeClones(profile);
         }
@@ -912,13 +1116,14 @@ public class AchievementBadgeService
 
         SanitizeEquippedBadges(profile);
 
-        if (newlyUnlocked.Count > 0 && _webhookNotifier is not null)
+        if (newlyUnlocked.Count > 0)
         {
             var userName = ResolveUserName(userId);
             foreach (var badge in newlyUnlocked)
             {
                 if (!IsBadgeEnabled(badge.Id)) continue;
-                _webhookNotifier.NotifyUnlock(userName, badge);
+                _webhookNotifier?.NotifyUnlock(userName, badge);
+                _auditLog?.Log(userId, userName, "unlock", badge.Title + " (" + badge.Rarity + ")");
             }
         }
     }

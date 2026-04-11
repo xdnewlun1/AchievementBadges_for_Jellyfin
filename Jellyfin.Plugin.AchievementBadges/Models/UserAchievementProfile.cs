@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Jellyfin.Plugin.AchievementBadges.Models;
@@ -8,4 +9,19 @@ public class UserAchievementProfile
     public UserAchievementCounters Counters { get; set; } = new();
     public List<AchievementBadge> Badges { get; set; } = new();
     public List<string> EquippedBadgeIds { get; set; } = new();
+
+    public int PrestigeLevel { get; set; }
+    public int ScoreBank { get; set; }
+    public int LifetimeScore { get; set; }
+
+    public DateTimeOffset? LastPlaybackAt { get; set; }
+    public int ComboCount { get; set; }
+    public int BestComboCount { get; set; }
+
+    public List<string> BoughtBadgeIds { get; set; } = new();
+
+    public string? DailyQuestId { get; set; }
+    public string? DailyQuestDate { get; set; }
+    public bool DailyQuestCompleted { get; set; }
+    public int DailyQuestStartValue { get; set; }
 }

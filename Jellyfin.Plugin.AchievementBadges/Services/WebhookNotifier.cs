@@ -36,8 +36,17 @@ public class WebhookNotifier
             .Replace("{rarity}", badge.Rarity ?? "Common", StringComparison.OrdinalIgnoreCase)
             .Replace("{description}", badge.Description ?? string.Empty, StringComparison.OrdinalIgnoreCase);
 
-        var payload = new { content };
         var url = config.WebhookUrl!;
+        object payload;
+        if (url.Contains("hooks.slack.com", StringComparison.OrdinalIgnoreCase))
+        {
+            payload = new { text = content };
+        }
+        else
+        {
+            // Default Discord / generic format
+            payload = new { content };
+        }
 
         _ = Task.Run(async () =>
         {
