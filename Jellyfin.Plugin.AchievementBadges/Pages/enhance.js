@@ -77,6 +77,36 @@
 
     var rarityScorePts = { common: 10, uncommon: 20, rare: 35, epic: 60, legendary: 100, mythic: 150 };
 
+    // Center icon for the unlock toast. Defaults to a built-in glyph; an
+    // admin-supplied SVG (from /public-config → ToastCenterIconSvg) overrides
+    // it at runtime. Rendered via <img src="data:image/svg+xml,…"> so scripts
+    // inside the SVG can't execute in the page context (image-loaded SVGs
+    // don't get script/XHR/etc. privileges in modern browsers).
+    var TOAST_DEFAULT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 24 24"><path d="M12 2C7.58 2 4 5.58 4 10v3c0 .55.45 1 1 1s1-.45 1-1v-3c0-3.31 2.69-6 6-6s6 2.69 6 6v3c0 .55.45 1 1 1s1-.45 1-1v-3c0-4.42-3.58-8-8-8z"/><circle cx="9.5" cy="9.5" r="1.3"/><circle cx="14.5" cy="9.5" r="1.3"/><path d="M7 13c-.55 0-1 .45-1 1 0 2.5-1 4-2 5-.3.3-.3.8 0 1.1.3.3.8.3 1.1 0 1.3-1.3 2.5-3.2 2.5-6.1 0-.55-.45-1-1-1zm4 1c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1s1-.45 1-1v-6c0-.55-.45-1-1-1zm4 0c-.55 0-1 .45-1 1 0 2.9 1.2 4.8 2.5 6.1.3.3.8.3 1.1 0 .3-.3.3-.8 0-1.1-1-1-2-2.5-2-5 0-.55-.45-1-1-1z"/></svg>';
+    var TOAST_CENTER_ICON = TOAST_DEFAULT_ICON;
+
+    function svgToDataUri(svg) {
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    function loadToastCenterIcon() {
+        try {
+            var api = getApi && getApi();
+            var url = api && typeof api.getUrl === 'function'
+                ? api.getUrl('Plugins/AchievementBadges/public-config')
+                : '/Plugins/AchievementBadges/public-config';
+            fetch(url, { credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (cfg) {
+                    if (cfg && typeof cfg.ToastCenterIconSvg === 'string' && cfg.ToastCenterIconSvg.length > 0) {
+                        TOAST_CENTER_ICON = cfg.ToastCenterIconSvg;
+                    }
+                })
+                .catch(function () { /* silent — fall back to default icon */ });
+        } catch (e) { /* silent */ }
+    }
+    loadToastCenterIcon();
+
     // Xbox-style shades per rarity: base (solid), lighter (::before pulse + highlight),
     // darker (::after pulse + shadow), bright (color-shifted state while banner is expanded).
     // Mirrors the original codepen where #39960C base shifts to #42ae0e at 24%-85%.
@@ -132,7 +162,7 @@
                     '<img class="ab-xb-trophy-2" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+Cgk8ZyBmaWxsPSIjZmZmIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2Mi4wMDAwMDAsIDUuMDAwMDAwKSI+CgkJPHJlY3QgeD0iMTQ0LjkzMTAzNCIgeT0iMzQ0LjcyIiB3aWR0aD0iNzkuODIwNDk1MyIgaGVpZ2h0PSI2NS4xMiIgcng9IjgiPgoJCTwvcmVjdD4KCQk8cmVjdCB4PSIwLjkxMTE2MjE0NyIgeT0iMCIgd2lkdGg9IjM2NS43OTMxMDMiIGhlaWdodD0iMjQuNjQiIHJ4PSIxMi4zMiI+CgkJPC9yZWN0PgoJCTxwYXRoIGQ9Ik0xMy4wMzQ0ODI4LDIzLjY0IEwzNTUuOTY1NTE3LDIzLjY0IEMzNTUuOTY1NTE3LDIzLjY0IDM0Ny40OTA0NjksMjEyLjg5ODAwOCAzMDUuNTkxNjE4LDI3OS4zMDkwMDQgQzI2My42OTI3NjcsMzQ1LjcyIDIyNy4xMzIzNDcsMzQ1LjcyIDIyNy4xMzIzNDcsMzQ1LjcyIEwxNDEuODY3NjUzLDM0NS43MiBDMTQxLjg2NzY1MywzNDUuNzIgMTAwLjU5NTA2OCwzNTIuMDc4MDA1IDYwLjUxNzI0MTEsMjc5LjMwOTAwNCBDMjAuNDM5NDE0MiwyMDYuNTQwMDAyIDEzLjAzNDQ4MjgsMjMuNjQgMTMuMDM0NDgyOCwyMy42NCBaIj4KCQk8L3BhdGg+CgkJPHBhdGggZD0iTTE4NS41ODQxNDksMzc5LjE2IEMyNjcuMzEwMzczLDM3OS4xNiAyNTkuNDQ2MjE4LDQ0NC4yOCAyNTkuNDQ2MjE4LDQ0NC4yOCBMMTExLjcyMjA4LDQ0NC4yOCBDMTExLjcyMjA4LDQ0NC4yOCAxMDMuODU3OTI1LDM3OS4xNiAxODUuNTg0MTQ5LDM3OS4xNiBaIj4KCQk8L3BhdGg+CgkJPHJlY3QgeD0iOTcuNDQ4Mjc1OSIgeT0iNDQzLjI4IiB3aWR0aD0iMTc1Ljg2MjA2OSIgaGVpZ2h0PSIzOC43MiI+CgkJPC9yZWN0PgoJPC9nPgo8L3N2Zz4K"/>' +
                 '</div>' +
                 '<div class="ab-xb-img ab-xb-xbox-img">' +
-                    '<img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNNC4xMDIgMjEuMDMzQzYuMjExIDIyLjg4MSA4Ljk3NyAyNCAxMiAyNGMzLjAyNiAwIDUuNzg5LTEuMTE5IDcuOTAyLTIuOTY3IDEuODc3LTEuOTEyLTQuMzE2LTguNzA5LTcuOTAyLTExLjQxNy0zLjU4MiAyLjcwOC05Ljc3OSA5LjUwNS03Ljg5OCAxMS40MTd6bTExLjE2LTE0LjQwNmMyLjUgMi45NjEgNy40ODQgMTAuMzEzIDYuMDc2IDEyLjkxMkMyMy4wMDIgMTcuNDggMjQgMTQuODYxIDI0IDEyLjAwNGMwLTMuMzQtMS4zNjUtNi4zNjItMy41Ny04LjUzNiAwIDAtLjAyNy0uMDIyLS4wODItLjA0Mi0uMDYzLS4wMjItLjE1Mi0uMDQ1LS4yODEtLjA0NS0uNTkyIDAtMS45ODUuNDM0LTQuODA1IDMuMjQ2ek0zLjY1NCAzLjQyNmMtLjA1Ny4wMi0uMDgyLjA0MS0uMDg2LjA0MkMxLjM2NSA1LjY0MiAwIDguNjY0IDAgMTIuMDA0YzAgMi44NTQuOTk4IDUuNDczIDIuNjYxIDcuNTMzLTEuNDAxLTIuNjA1IDMuNTc5LTkuOTUxIDYuMDgtMTIuOTEtMi44Mi0yLjgxMy00LjIxNi0zLjI0NS00LjgwNi0zLjI0NS0uMTMxIDAtLjIyMy4wMjEtLjI4MS4wNDZ2LS4wMDJ6TTEyIDMuNTUxUzkuMDU1IDEuODI4IDYuNzU1IDEuNzQ2Yy0uOTAzLS4wMzMtMS40NTQuMjk1LTEuNTIxLjMzOUM3LjM3OS42NDYgOS42NTkgMCAxMS45ODQgMEgxMmMyLjMzNCAwIDQuNjA1LjY0NiA2Ljc2NiAyLjA4NS0uMDY4LS4wNDYtLjYxNS0uMzcyLTEuNTItLjMzOUMxNC45NDYgMS44MjggMTIgMy41NDUgMTIgMy41NDV2LjAwNnoiIC8+Cjwvc3ZnPgo="/>' +
+                    '<img src="' + svgToDataUri(TOAST_CENTER_ICON) + '"/>' +
                 '</div>' +
             '</div>' +
             '<div class="ab-xb-banner-outer">' +

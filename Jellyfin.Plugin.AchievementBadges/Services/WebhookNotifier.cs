@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using Microsoft.Extensions.Logging;
 
@@ -26,15 +27,25 @@ public class WebhookNotifier
             return;
         }
 
+        // Re-validate at send time: the SaveWebhookConfig endpoint validates
+        // on write, but config files can also be edited directly on disk
+        // and the validator re-resolves DNS — a hostname that was public at
+        // save time could later resolve to an internal address.
+        if (!WebhookUrlValidator.TryValidate(config.WebhookUrl, out var validationError))
+        {
+            _logger.LogWarning("[AchievementBadges] Webhook disabled at send time: {Reason}", validationError);
+            return;
+        }
+
         var template = string.IsNullOrWhiteSpace(config.WebhookMessageTemplate)
             ? "{user} unlocked {badge}"
             : config.WebhookMessageTemplate!;
 
         var content = template
-            .Replace("{user}", userName ?? "Someone", StringComparison.OrdinalIgnoreCase)
-            .Replace("{badge}", badge.Title ?? "a badge", StringComparison.OrdinalIgnoreCase)
-            .Replace("{rarity}", badge.Rarity ?? "Common", StringComparison.OrdinalIgnoreCase)
-            .Replace("{description}", badge.Description ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            .Replace("{user}", Sanitize(userName ?? "Someone"), StringComparison.OrdinalIgnoreCase)
+            .Replace("{badge}", Sanitize(badge.Title ?? "a badge"), StringComparison.OrdinalIgnoreCase)
+            .Replace("{rarity}", Sanitize(badge.Rarity ?? "Common"), StringComparison.OrdinalIgnoreCase)
+            .Replace("{description}", Sanitize(badge.Description ?? string.Empty), StringComparison.OrdinalIgnoreCase);
 
         var url = config.WebhookUrl!;
         object payload;
@@ -68,5 +79,35 @@ public class WebhookNotifier
                 _logger.LogWarning(ex, "[AchievementBadges] Webhook POST failed.");
             }
         });
+    }
+
+    // Strip newlines and other control characters so a user-supplied name or
+    // badge description can't break out of the surrounding template context
+    // (newlines would otherwise appear as-is in Slack/Discord rendering and
+    // could allow primitive markdown/mention injection).
+    private static string Sanitize(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        var sb = new StringBuilder(value.Length);
+        foreach (var ch in value)
+        {
+            if (ch == '\r' || ch == '\n' || ch == '\t')
+            {
+                sb.Append(' ');
+            }
+            else if (char.IsControl(ch))
+            {
+                continue;
+            }
+            else
+            {
+                sb.Append(ch);
+            }
+        }
+        return sb.ToString();
     }
 }

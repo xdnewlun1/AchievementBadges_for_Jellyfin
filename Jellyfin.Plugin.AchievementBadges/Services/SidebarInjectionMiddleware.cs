@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +10,12 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 
 public class SidebarInjectionMiddleware
 {
+    // Upper bound on buffered HTML payloads. Jellyfin's own index.html is well
+    // under 500 KB; anything bigger is either not the SPA shell or an abuse
+    // attempt. Without this cap, an attacker-controlled response could force
+    // us to hold arbitrarily large buffers in memory per request.
+    private const long MaxBufferBytes = 5 * 1024 * 1024;
+
     private readonly RequestDelegate _next;
     private readonly ILogger<SidebarInjectionMiddleware> _logger;
 
@@ -245,21 +252,37 @@ public class SidebarInjectionMiddleware
 
             await _next(context);
 
+            // If the upstream response was too large to safely buffer for
+            // rewriting, copy it through untouched rather than trying to
+            // parse a multi-megabyte HTML blob in memory.
+            if (buffer.Length > MaxBufferBytes)
+            {
+                buffer.Seek(0, SeekOrigin.Begin);
+                context.Response.Body = originalBody;
+                await buffer.CopyToAsync(originalBody);
+                return;
+            }
+
             buffer.Seek(0, SeekOrigin.Begin);
 
             var contentType = context.Response.ContentType;
             var contentEncoding = context.Response.Headers["Content-Encoding"].ToString();
 
-            // Only rewrite uncompressed text/html. If the response is gzip/br,
-            // streaming through our buffer as plain UTF-8 would mangle bytes,
-            // so pass it through untouched.
             var isHtml = contentType != null && contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase);
-            var isCompressed = !string.IsNullOrEmpty(contentEncoding);
 
-            if (isHtml && !isCompressed)
+            if (isHtml)
             {
-                using var reader = new StreamReader(buffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
-                var html = await reader.ReadToEndAsync();
+                // Decode the response body. Jellyfin (and upstream proxies) often
+                // gzip/br text/html responses; if we only rewrote uncompressed
+                // HTML we'd silently skip injection on most real deployments.
+                if (!TryDecodeBody(buffer.ToArray(), contentEncoding, out var html))
+                {
+                    // Couldn't decode (unknown encoding, malformed stream) — pass through.
+                    buffer.Seek(0, SeekOrigin.Begin);
+                    context.Response.Body = originalBody;
+                    await buffer.CopyToAsync(originalBody);
+                    return;
+                }
 
                 // Idempotency: if WebInjectionService has already patched
                 // index.html on disk, the marker is present and we must not
@@ -277,14 +300,16 @@ public class SidebarInjectionMiddleware
                     html = html.Replace("</body>", InjectionScript + "</body>",
                         StringComparison.OrdinalIgnoreCase);
 
-                    var bytes = Encoding.UTF8.GetBytes(html);
+                    var rewritten = Encoding.UTF8.GetBytes(html);
+                    var reEncoded = EncodeBody(rewritten, contentEncoding);
+
                     // Clear Content-Length so the framework re-derives it from the new body.
                     // Setting it to bytes.Length first caused a race on some Kestrel paths.
                     context.Response.ContentLength = null;
                     context.Response.Body = originalBody;
-                    await context.Response.Body.WriteAsync(bytes);
+                    await context.Response.Body.WriteAsync(reEncoded);
 
-                    _logger.LogInformation("[AchievementBadges] Injected scripts into {Path} ({Bytes} bytes).", context.Request.Path.Value, bytes.Length);
+                    _logger.LogInformation("[AchievementBadges] Injected scripts into {Path} ({Bytes} bytes, encoding={Encoding}).", context.Request.Path.Value, reEncoded.Length, string.IsNullOrEmpty(contentEncoding) ? "identity" : contentEncoding);
                     return;
                 }
             }
@@ -298,6 +323,69 @@ public class SidebarInjectionMiddleware
             _logger.LogError(ex, "[AchievementBadges] Error in script injection middleware.");
             context.Response.Body = originalBody;
         }
+    }
+
+    private static bool TryDecodeBody(byte[] body, string contentEncoding, out string html)
+    {
+        html = string.Empty;
+        try
+        {
+            if (string.IsNullOrEmpty(contentEncoding))
+            {
+                html = Encoding.UTF8.GetString(body);
+                return true;
+            }
+
+            using var input = new MemoryStream(body);
+            Stream decompressed = contentEncoding.ToLowerInvariant() switch
+            {
+                "gzip" => new GZipStream(input, CompressionMode.Decompress, leaveOpen: false),
+                "br" => new BrotliStream(input, CompressionMode.Decompress, leaveOpen: false),
+                "deflate" => new DeflateStream(input, CompressionMode.Decompress, leaveOpen: false),
+                _ => null!
+            };
+            if (decompressed is null)
+            {
+                return false;
+            }
+            using (decompressed)
+            using (var reader = new StreamReader(decompressed, Encoding.UTF8))
+            {
+                html = reader.ReadToEnd();
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static byte[] EncodeBody(byte[] body, string contentEncoding)
+    {
+        if (string.IsNullOrEmpty(contentEncoding))
+        {
+            return body;
+        }
+
+        using var output = new MemoryStream();
+        Stream compressor = contentEncoding.ToLowerInvariant() switch
+        {
+            "gzip" => new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true),
+            "br" => new BrotliStream(output, CompressionLevel.Fastest, leaveOpen: true),
+            "deflate" => new DeflateStream(output, CompressionLevel.Fastest, leaveOpen: true),
+            _ => null!
+        };
+        if (compressor is null)
+        {
+            // Unknown encoding — fall back to identity and let the browser cope.
+            return body;
+        }
+        using (compressor)
+        {
+            compressor.Write(body, 0, body.Length);
+        }
+        return output.ToArray();
     }
 
     // Broad prefilter: buffer anything that MIGHT be Jellyfin's SPA shell HTML.

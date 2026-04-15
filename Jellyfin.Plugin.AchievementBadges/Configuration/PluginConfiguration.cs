@@ -48,4 +48,9 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool RestrictBadgeVisibility { get; set; } = false;
     public List<string> DisabledBadgeCategories { get; set; } = new();
     public string WelcomeMessage { get; set; } = "";
+
+    // Admin-uploaded SVG that replaces the center icon in the unlock toast.
+    // Validated by SvgSanitizer on save; rendered via <img src="data:...">
+    // so <script> inside SVG can't execute (browser image-loading context).
+    public string? ToastCenterIconSvg { get; set; }
 }

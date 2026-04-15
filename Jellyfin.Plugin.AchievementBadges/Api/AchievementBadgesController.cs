@@ -14,6 +14,7 @@ namespace Jellyfin.Plugin.AchievementBadges.Api;
 [ApiController]
 [Authorize]
 [Route("Plugins/AchievementBadges")]
+[ServiceFilter(typeof(UserOwnershipFilter))]
 public class AchievementBadgesController : ControllerBase
 {
     private readonly AchievementBadgeService _badgeService;
@@ -213,6 +214,12 @@ public class AchievementBadgesController : ControllerBase
         [FromQuery] bool isEpisode = true,
         [FromQuery] bool isSeriesCompleted = false)
     {
+        if (double.IsNaN(completionPercent) || double.IsInfinity(completionPercent))
+        {
+            return BadRequest(new { Message = "completionPercent must be a finite number." });
+        }
+        completionPercent = Math.Clamp(completionPercent, 0d, 100d);
+
         var success = _playbackCompletionService.RecordCompletion(
             userId,
             itemId,
@@ -724,8 +731,19 @@ public class AchievementBadgesController : ControllerBase
     [HttpGet("users/{userId}/profile-card")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult GetProfileCard([FromRoute] string userId)
     {
+        // Reject malformed ids and unknown users up-front. Without this, every
+        // GUID-shaped string would trigger GetOrCreateProfile and materialize
+        // an empty profile on disk — both an enumeration oracle (real vs fake
+        // users are distinguishable by stats) and an unauthenticated
+        // write-amplification vector into badges.json.
+        if (!Guid.TryParse(userId, out _) || _badgeService.PeekProfile(userId) is null)
+        {
+            return NotFound();
+        }
+
         var content = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html")
             ?? "<html><body>Profile card template missing.</body></html>";
 
@@ -764,17 +782,17 @@ public class AchievementBadgesController : ControllerBase
             int currentStreak = (int)(streakData.GetType().GetProperty("CurrentStreak")?.GetValue(streakData) ?? 0);
 
             content = content
-                .Replace("{{userId}}", userId)
+                .Replace("{{userId}}", System.Net.WebUtility.HtmlEncode(userId))
                 .Replace("{{score}}", score.ToString())
                 .Replace("{{unlocked}}", unlocked.ToString())
                 .Replace("{{total}}", total.ToString())
                 .Replace("{{percentage}}", percentage.ToString("0.#"))
                 .Replace("{{bestStreak}}", bestStreak.ToString())
                 .Replace("{{currentStreak}}", currentStreak.ToString())
-                .Replace("{{tierName}}", tier.Name)
-                .Replace("{{tierColor}}", tier.Color)
+                .Replace("{{tierName}}", System.Net.WebUtility.HtmlEncode(tier.Name))
+                .Replace("{{tierColor}}", System.Net.WebUtility.HtmlEncode(tier.Color))
                 .Replace("{{progressToNext}}", progress.ToString())
-                .Replace("{{nextTierLabel}}", next is null ? "Max rank" : $"{next.MinScore - score} to {next.Name}")
+                .Replace("{{nextTierLabel}}", next is null ? "Max rank" : System.Net.WebUtility.HtmlEncode($"{next.MinScore - score} to {next.Name}"))
                 .Replace("{{recapMovies}}", recapMovies.ToString())
                 .Replace("{{recapEpisodes}}", recapEpisodes.ToString())
                 .Replace("{{recapUnlocks}}", recapUnlocks.ToString())
@@ -782,7 +800,7 @@ public class AchievementBadgesController : ControllerBase
         }
         catch (Exception ex)
         {
-            content = content.Replace("{{userId}}", userId ?? string.Empty);
+            content = content.Replace("{{userId}}", System.Net.WebUtility.HtmlEncode(userId ?? string.Empty));
             return Content($"<html><body style='background:#111;color:#fff;font-family:sans-serif;padding:2em;'><h1>Profile card error</h1><p>{System.Net.WebUtility.HtmlEncode(ex.Message)}</p></body></html>", "text/html");
         }
 
@@ -816,7 +834,10 @@ public class AchievementBadgesController : ControllerBase
         var plugin = Plugin.Instance;
         if (plugin is null) return BadRequest();
         var config = plugin.Configuration;
-        config.CustomBadges = (badges ?? new()).Where(b => !string.IsNullOrWhiteSpace(b.Id)).ToList();
+        config.CustomBadges = (badges ?? new())
+            .Where(b => !string.IsNullOrWhiteSpace(b.Id))
+            .Select(AchievementDefinitionSanitizer.Sanitize)
+            .ToList();
         foreach (var b in config.CustomBadges) { b.IsCustom = true; }
         plugin.UpdateConfiguration(config);
         return Ok(new { Count = config.CustomBadges.Count });
@@ -840,7 +861,10 @@ public class AchievementBadgesController : ControllerBase
         var plugin = Plugin.Instance;
         if (plugin is null) return BadRequest();
         var config = plugin.Configuration;
-        config.Challenges = (challenges ?? new()).Where(b => !string.IsNullOrWhiteSpace(b.Id)).ToList();
+        config.Challenges = (challenges ?? new())
+            .Where(b => !string.IsNullOrWhiteSpace(b.Id))
+            .Select(AchievementDefinitionSanitizer.Sanitize)
+            .ToList();
         foreach (var c in config.Challenges) { c.IsChallenge = true; }
         plugin.UpdateConfiguration(config);
         return Ok(new { Count = config.Challenges.Count });
@@ -872,13 +896,26 @@ public class AchievementBadgesController : ControllerBase
     [HttpPost("admin/webhook")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult SaveWebhookConfig([FromBody] WebhookConfigRequest request)
     {
         var plugin = Plugin.Instance;
         if (plugin is null) return BadRequest();
+
+        var enabled = request?.WebhookEnabled ?? false;
+        var url = request?.WebhookUrl;
+
+        // Only enforce URL validity when the admin is actually enabling the
+        // webhook — a disabled webhook with a saved-but-invalid URL is fine
+        // because no request is ever issued.
+        if (enabled && !WebhookUrlValidator.TryValidate(url, out var error))
+        {
+            return BadRequest(new { Message = error });
+        }
+
         var config = plugin.Configuration;
-        config.WebhookUrl = request?.WebhookUrl;
-        config.WebhookEnabled = request?.WebhookEnabled ?? false;
+        config.WebhookUrl = url;
+        config.WebhookEnabled = enabled;
         if (!string.IsNullOrWhiteSpace(request?.WebhookMessageTemplate))
         {
             config.WebhookMessageTemplate = request.WebhookMessageTemplate!;
@@ -1019,8 +1056,25 @@ public class AchievementBadgesController : ControllerBase
     [HttpPost("users/{userId}/import")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult ImportProfile([FromRoute] string userId, [FromBody] UserAchievementProfile profile)
     {
+        if (profile is null)
+        {
+            return BadRequest(new { Message = "Profile body is required." });
+        }
+
+        // Imported profiles can carry attacker-shaped badge fields that later
+        // render via innerHTML in the client. Cap lengths / clamp numeric
+        // fields before they're persisted.
+        if (profile.Badges is not null)
+        {
+            foreach (var b in profile.Badges)
+            {
+                AchievementDefinitionSanitizer.Sanitize(b);
+            }
+        }
+
         _badgeService.ImportProfile(userId, profile);
         return Ok(new { Success = true });
     }
@@ -1092,8 +1146,50 @@ public class AchievementBadgesController : ControllerBase
             QuestsEnabled = c?.QuestsEnabled ?? true,
             ForcePrivacyMode = c?.ForcePrivacyMode ?? false,
             ForceSpoilerMode = c?.ForceSpoilerMode ?? false,
-            ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false
+            ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false,
+            ToastCenterIconSvg = c?.ToastCenterIconSvg ?? ""
         });
+    }
+
+    public class ToastIconRequest { public string? Svg { get; set; } }
+
+    [HttpGet("admin/toast-icon")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetToastIcon()
+    {
+        var c = Plugin.Instance?.Configuration;
+        return Ok(new { Svg = c?.ToastCenterIconSvg ?? "" });
+    }
+
+    [HttpPost("admin/toast-icon")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult SaveToastIcon([FromBody] ToastIconRequest request)
+    {
+        var plugin = Plugin.Instance;
+        if (plugin is null) return BadRequest();
+
+        var config = plugin.Configuration;
+        var svg = request?.Svg?.Trim();
+
+        if (string.IsNullOrEmpty(svg))
+        {
+            // Empty payload clears the override and reverts toasts to the bundled default icon.
+            config.ToastCenterIconSvg = null;
+            plugin.UpdateConfiguration(config);
+            return Ok(new { Success = true, Cleared = true });
+        }
+
+        if (!SvgSanitizer.TryValidate(svg, out var sanitized, out var error))
+        {
+            return BadRequest(new { Message = error });
+        }
+
+        config.ToastCenterIconSvg = sanitized;
+        plugin.UpdateConfiguration(config);
+        return Ok(new { Success = true, Bytes = sanitized.Length });
     }
 
     // ---------- Admin: Feature config -----------------------------------

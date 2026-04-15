@@ -144,6 +144,43 @@
                     </div>
                 </details>
 
+                <details style="margin-top: 1.5em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">Toast Center Icon</summary>
+                    <div style="padding:0.5em 0 1em 0;">
+                        <div class="fieldDescription" style="margin-bottom:0.75em;">
+                            Upload a custom SVG to replace the center icon in the achievement unlock toast.
+                            Leave blank to use the built-in default. Maximum 100&nbsp;KB.
+                            Scripts, event handlers, and external references are rejected server-side.
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="ToastIconFile">Upload SVG file</label>
+                            <input type="file" id="ToastIconFile" accept=".svg,image/svg+xml" />
+                            <div class="fieldDescription">Reads the file into the box below — you can also paste SVG markup directly.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="ToastCenterIconSvg">SVG markup</label>
+                            <textarea id="ToastCenterIconSvg" is="emby-textarea" rows="8" style="width:100%; font-family:monospace; font-size:0.85em;"></textarea>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel">Preview</label>
+                            <div id="ToastIconPreview" style="width:80px; height:80px; padding:8px; background:#222; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                                <span style="color:#888; font-size:0.8em;">none</span>
+                            </div>
+                        </div>
+                        <div class="inputContainer" style="display:flex; gap:0.5em; flex-wrap:wrap;">
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    onclick="AchievementBadgesConfig.saveToastIcon()">
+                                <span>Save Icon</span>
+                            </button>
+                            <button is="emby-button" type="button" class="emby-button"
+                                    onclick="AchievementBadgesConfig.clearToastIcon()">
+                                <span>Reset to default</span>
+                            </button>
+                            <span id="ToastIconStatus" style="align-self:center; margin-left:0.5em; color:#9fb3c8;"></span>
+                        </div>
+                    </div>
+                </details>
+
                 <div>
                     <button is="emby-button" type="button" class="raised button-submit block emby-button"
                             onclick="AchievementBadgesConfig.save()">
@@ -185,6 +222,108 @@
 
                         Dashboard.hideLoadingMsg();
                     });
+                    AchievementBadgesConfig.loadToastIcon();
+                    AchievementBadgesConfig.wireToastIconUI();
+                },
+
+                loadToastIcon: function () {
+                    ApiClient.fetch({
+                        type: 'GET',
+                        url: ApiClient.getUrl('Plugins/AchievementBadges/admin/toast-icon'),
+                        dataType: 'json'
+                    }).then(function (res) {
+                        var ta = document.getElementById('ToastCenterIconSvg');
+                        if (ta) ta.value = (res && res.Svg) || '';
+                        AchievementBadgesConfig.renderToastIconPreview();
+                    }).catch(function () { /* ignore */ });
+                },
+
+                wireToastIconUI: function () {
+                    var file = document.getElementById('ToastIconFile');
+                    var ta = document.getElementById('ToastCenterIconSvg');
+                    if (file && !file.dataset.wired) {
+                        file.dataset.wired = '1';
+                        file.addEventListener('change', function () {
+                            var f = file.files && file.files[0];
+                            if (!f) return;
+                            if (f.size > 100000) {
+                                AchievementBadgesConfig.setToastIconStatus('File too large (max 100 KB).', true);
+                                return;
+                            }
+                            var reader = new FileReader();
+                            reader.onload = function () {
+                                ta.value = String(reader.result || '');
+                                AchievementBadgesConfig.renderToastIconPreview();
+                                AchievementBadgesConfig.setToastIconStatus('Loaded. Click "Save Icon" to apply.', false);
+                            };
+                            reader.readAsText(f);
+                        });
+                    }
+                    if (ta && !ta.dataset.wired) {
+                        ta.dataset.wired = '1';
+                        ta.addEventListener('input', AchievementBadgesConfig.renderToastIconPreview);
+                    }
+                },
+
+                renderToastIconPreview: function () {
+                    var preview = document.getElementById('ToastIconPreview');
+                    var ta = document.getElementById('ToastCenterIconSvg');
+                    if (!preview || !ta) return;
+                    var svg = (ta.value || '').trim();
+                    if (!svg) {
+                        preview.innerHTML = '<span style="color:#888; font-size:0.8em;">none</span>';
+                        return;
+                    }
+                    // Render via data-URI <img> so scripts inside SVG can't execute.
+                    var dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+                    var img = document.createElement('img');
+                    img.src = dataUri;
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    preview.innerHTML = '';
+                    preview.appendChild(img);
+                },
+
+                setToastIconStatus: function (message, isError) {
+                    var el = document.getElementById('ToastIconStatus');
+                    if (!el) return;
+                    el.textContent = message || '';
+                    el.style.color = isError ? '#fca5a5' : '#9fb3c8';
+                },
+
+                saveToastIcon: function () {
+                    var ta = document.getElementById('ToastCenterIconSvg');
+                    var svg = (ta && ta.value || '').trim();
+                    AchievementBadgesConfig.setToastIconStatus('Saving...', false);
+                    ApiClient.fetch({
+                        type: 'POST',
+                        url: ApiClient.getUrl('Plugins/AchievementBadges/admin/toast-icon'),
+                        contentType: 'application/json',
+                        data: JSON.stringify({ Svg: svg }),
+                        dataType: 'json'
+                    }).then(function (res) {
+                        if (res && res.Cleared) {
+                            AchievementBadgesConfig.setToastIconStatus('Cleared — default icon will be used.', false);
+                        } else {
+                            AchievementBadgesConfig.setToastIconStatus('Saved (' + ((res && res.Bytes) || 0) + ' bytes).', false);
+                        }
+                    }).catch(function (err) {
+                        var msg = 'Save failed.';
+                        try {
+                            if (err && err.responseText) {
+                                var parsed = JSON.parse(err.responseText);
+                                if (parsed && parsed.Message) msg = parsed.Message;
+                            }
+                        } catch (_) { /* ignore */ }
+                        AchievementBadgesConfig.setToastIconStatus(msg, true);
+                    });
+                },
+
+                clearToastIcon: function () {
+                    var ta = document.getElementById('ToastCenterIconSvg');
+                    if (ta) ta.value = '';
+                    AchievementBadgesConfig.renderToastIconPreview();
+                    AchievementBadgesConfig.saveToastIcon();
                 },
 
                 save: function () {
