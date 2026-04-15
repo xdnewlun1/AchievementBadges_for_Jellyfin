@@ -9,6 +9,13 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.5.46",
+        "changelog": "Moved the Toast Center Icon admin section onto the main Achievements admin page (Pages/index.html) next to the other admin sections, so it appears where admins actually manage plugin settings. Same SVG sanitization and live preview as before.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/xdnewlun1/AchievementBadges_for_Jellyfin/releases/download/v1.5.46/Jellyfin.Plugin.AchievementBadgesv1.5.46.zip",
+        "checksum": "BECB5FCFC56D68DEBFB822ADEAC97959"
+      },
+      {
         "version": "1.5.45",
         "changelog": "Admin-configurable toast center icon + security fixes. New Toast Center Icon section in plugin admin config: upload or paste an SVG to replace the default icon in the unlock toast, with a live preview and size cap (100 KB). SVG is sanitized server-side (no <script>, <foreignObject>, <iframe>, <embed>, <object>, <use>, no on* attributes, no javascript: or data:text/html URIs) and rendered via <img src=\"data:image/svg+xml,...\"> so any script content cannot execute. Also includes unrelated security hardening from disclosed vulnerabilities.",
         "targetAbi": "10.11.0.0",
